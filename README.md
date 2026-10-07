@@ -1,5 +1,10 @@
 # Kinderbuch-KI
 
+<p align="center">
+  <img src="./ki.gif" alt="Kinderbuch-KI Demo" width="400">
+</p>
+
+
 ## Einführung
 
 **Kinderbuch-KI** ist eine innovative Plattform, die es Kindern und Eltern ermöglicht, personalisierte, interaktive Geschichten zu erstellen. Mithilfe von KI-Technologie werden Geschichten generiert, die durch kindgerechte Illustrationen, Videofunktionen und Vorlesemöglichkeiten ein einzigartiges Erlebnis schaffen. Unser Ziel ist es, die Kreativität von Kindern zu fördern und Familien über räumliche Distanzen hinweg zu verbinden.
