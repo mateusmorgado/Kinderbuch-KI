@@ -21,6 +21,8 @@ export default function StoryResultPage() {
     }
 
     try {
+      // Browser storage is only available after hydration.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStoryData(JSON.parse(storedStory));
     } catch {
       sessionStorage.removeItem("generatedStory");

@@ -5,14 +5,17 @@ WORKDIR /app
 
 # Copy package files first to leverage Docker layer caching
 COPY package.json .
-COPY package-lock.json .
-RUN npm install 
+COPY pnpm-lock.yaml .
+RUN corepack enable && pnpm install --frozen-lockfile
 
 # Copy the entire project
 COPY . .
 
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Build the Next.js app
-RUN npm run build
+RUN pnpm build
 
 # Create a smaller runtime container
 FROM node:22-alpine AS runner
@@ -32,4 +35,4 @@ COPY --from=build /app/public public
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+CMD ["pnpm", "start"]

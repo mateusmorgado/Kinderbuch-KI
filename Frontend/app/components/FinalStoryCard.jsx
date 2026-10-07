@@ -1,16 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 
 export default function FinalStoryCard({ story, onDelete }) {
-  const [randomGradient, setRandomGradient] = useState("--calm");
+  const [randomGradient] = useState("--calm");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
-  useEffect(() => {
-    // Choose a random gradient when component mounts
-    const gradients = ["--peace", "--calm", "--curiosity", "--adventure"];
-    const randomIndex = Math.floor(Math.random() * gradients.length);
-    setRandomGradient(gradients[randomIndex]);
-  }, []);
 
   const handleDeleteClick = () => {
     setShowConfirmDialog(true);
@@ -34,9 +27,13 @@ export default function FinalStoryCard({ story, onDelete }) {
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
         <div className="fixed px-2 inset-0 bg-white/15 backdrop-blur-sm  bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="p-6 rounded-lg shadow-xl max-w-md w-full mx-2"
-          style={{ background: `var(${randomGradient})` }}>
-            <h3 className="text-lg text-center font-black mb-4">Geschichte löschen</h3>
+          <div
+            className="p-6 rounded-lg shadow-xl max-w-md w-full mx-2"
+            style={{ background: `var(${randomGradient})` }}
+          >
+            <h3 className="text-lg text-center font-black mb-4">
+              Geschichte löschen
+            </h3>
             <p className="mb-6 text-center">
               Möchtest du diese Geschichte wirklich löschen? Diese Aktion kann
               nicht rückgängig gemacht werden.

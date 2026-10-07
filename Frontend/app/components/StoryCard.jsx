@@ -1,18 +1,11 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 
 export default function StoryCard({ story }) {
   const router = useRouter();
-  const [randomGradient, setRandomGradient] = useState("--peace");
-
-  useEffect(() => {
-    // Choose a random gradient when component mounts
-    const gradients = ["--peace", "--calm", "--curiosity", "--adventure"];
-    const randomIndex = Math.floor(Math.random() * gradients.length);
-    setRandomGradient(gradients[randomIndex]);
-  }, []);
+  const [randomGradient] = useState("--peace");
 
   // Format date to be more readable
   const formattedDate = new Date(story.createdAt).toLocaleDateString("de-DE", {

@@ -20,8 +20,12 @@ export const metadata = {
   icons: {
     icon: [{ url: "/M.svg", type: "image/svg+xml" }],
   },
-  // Add basic viewport settings
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({ children }) {
