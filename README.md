@@ -1,7 +1,7 @@
 # Kinderbuch-KI
 
 <p align="center">
-  <img src="./ki.gif" alt="Kinderbuch-KI Demo" width="400">
+  <img src="./ki.gif" alt="Kinderbuch-KI Demo" width="150">
 </p>
 
 
