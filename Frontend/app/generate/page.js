@@ -1,250 +1,74 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Button from "../components/Button";
-import StoryNavigation from "../components/StoryNavigation";
-import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import TextBox from "../components/TextBox";
-import {
-  fetchPrompts,
-  generateStory,
-  saveStory,
-} from "../api/generate/generate";
+import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
-import LoadingSpGeneric from "../components/LoadingSpGeneric";
+import { generateStory } from "../api/generate/generate";
 
 export default function GeneratePage() {
   const router = useRouter();
-  const [currentScene, setCurrentScene] = useState(1);
-  const [options, setOptions] = useState([]);
-  const [selectedTitles, setSelectedTitles] = useState([]);
-  const [storyParts, setStoryParts] = useState([]);
-  const randomSeedRef = useRef(Date.now()); // Create a stable random seed
-  const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
-  const [isSaving, setIsSaving] = useState(false); // Add this to track save state
+  const [prompt, setPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const mutation = useMutation({
-    mutationFn: generateStory,
-    onSuccess: (data) => {
-      // Add validation for current scene and data
-      if (!data || !data.response) {
-        console.error("Empty response received for scene:", currentScene);
-        toast.error("Keine Antwort erhalten. Bitte versuchen Sie es erneut.");
-        return;
-      }
-
-      setStoryParts((prev) => {
-        // Only add the new story part if it's for the current scene
-        const newStoryParts = [...prev];
-        newStoryParts[currentScene - 1] = data.response;
-        return newStoryParts;
-      });
-
-      // Remove the conditional and always advance scene
-      setCurrentScene((prev) => {
-        if (prev === 5) {
-          toast.success("Geschichte erfolgreich generiert!");
-          return prev;
-        }
-        return prev + 1;
-      });
-    },
-    onError: (error) => {
-      console.error(`Error generating scene ${currentScene}:`, error);
-      toast.error(error.message || "Fehler beim Erstellen der Geschichte!");
-    },
-  });
-
-  const saveMutation = useMutation({
-    mutationFn: saveStory,
-    onSuccess: () => {
-      toast.success("Geschichte wurde erfolgreich gespeichert!");
-      setIsSaving(false); // Reset saving flag
-      router.push("/mystories"); // Redirect to stories list
-    },
-    onError: (error) => {
-      toast.error(error.message || "Fehler beim Speichern der Geschichte!");
-      setIsSaving(false); // Reset saving flag even on error
-    },
-  });
-
-  useEffect(() => {
-    const loadPrompts = async () => {
-      setIsLoadingPrompts(true);
-      try {
-        const data = await fetchPrompts(currentScene);
-        const randomFour = data.sort(() => 0.5 - Math.random()).slice(0, 4);
-        setOptions(randomFour);
-      } catch (err) {
-        toast.error(err.toString());
-      } finally {
-        setIsLoadingPrompts(false);
-      }
-    };
-
-    loadPrompts();
-  }, [currentScene]);
-
-  const handleSelect = (title) => {
-    setSelectedTitles((prev) => {
-      const newTitles = [...prev];
-      newTitles[currentScene - 1] = title; // overwrite the selection for the current scene
-      return newTitles;
-    });
-  };
-
-  const handleSave = () => {
-    // Prevent duplicate saves by checking isSaving flag
-    if (isSaving) {
-      console.log("Save already in progress");
+  const handleGenerate = async (event) => {
+    event.preventDefault();
+    if (!prompt.trim()) {
+      toast.error("Bitte beschreibe deine Geschichte.");
       return;
     }
 
-    setIsSaving(true); // Set saving flag
-
-    const userData = localStorage.getItem("user");
-    let userId = null;
-    if (userData) {
-      try {
-        userId = JSON.parse(userData).id;
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-    }
-
-    // Format content as an array of objects as expected by the backend
-    const formattedContent = storyParts.map((text, index) => ({
-      id: index + 1, // Scene number as ID
-      text: text,
-      image: "", // Default empty image field
-    }));
-
-    saveMutation.mutate({
-      title: selectedTitles.join(" - "), // Create a title from all selected prompts
-      content: formattedContent, // Send properly formatted content
-      userId, // Include the user id from local storage
-    });
-  };
-
-  const handleNext = () => {
-    const currentTitle = selectedTitles[currentScene - 1];
-
-    // Validate current selection
-    if (!currentTitle) {
-      toast.error("Bitte wählen Sie eine Option aus, um fortzufahren.");
-      return;
-    }
-
-    // Add additional validation
-    if (currentScene > 5) {
-      toast.error(
-        "Geschichte bereits erstellt. Bitte speichern Sie Ihre Geschichte."
+    setIsGenerating(true);
+    try {
+      const data = await generateStory({ prompt });
+      sessionStorage.setItem(
+        "generatedStory",
+        JSON.stringify({ prompt: prompt.trim(), story: data.response }),
       );
-      return;
+      toast.success("Geschichte erfolgreich erstellt!");
+      router.push("/story-result");
+    } catch (error) {
+      toast.error(error.message || "Fehler beim Erstellen der Geschichte!");
+    } finally {
+      setIsGenerating(false);
     }
-
-    // Get the previous story part if it exists
-    const previousStoryPart = storyParts[currentScene - 2] || "";
-
-    console.log(`Generating story for scene ${currentScene}`, {
-      title: currentTitle,
-      beforeOutput: previousStoryPart,
-    });
-
-    // Trigger mutation with validation
-    mutation.mutate({
-      title: currentTitle,
-      beforeOutput: previousStoryPart,
-      sceneNumber: currentScene, // Add scene number to track current progress
-    });
   };
-
-  const handlePrevious = () => {
-    if (currentScene === 1) {
-      router.back();
-      return;
-    }
-    setCurrentScene((prev) => Math.max(1, prev - 1));
-    setSelectedTitles((prev) => prev.slice(0, -1));
-    setStoryParts((prev) => prev.slice(0, -1));
-  };
-
-  if (mutation.isPending || saveMutation.isPending) {
-    return <LoadingSpinner />;
-  }
 
   return (
-    <div className="flex flex-col min-h-screen justify-between pb-4 px-2 items-center text-center">
-      {storyParts.length > 0 ? (
-        <TextBox
-          variant={
-            currentScene === 1
-              ? "adventure"
-              : currentScene === 2
-              ? "curiosity"
-              : currentScene === 3
-              ? "calm"
-              : "adventure"
-          }
-          className={`${
-            currentScene === 5 ? "h-[70vh] overflow-auto [&>*]:h-auto" : ""
-          }`}
-        >
-          {storyParts.map((part, idx) => (
-            <p key={idx} className="mb-2">
-              {part}
-            </p>
-          ))}
-        </TextBox>
-      ) : (
-        <div className="mx-auto text-center ">
-          <h2 className="mt-10  font-black text-5xl mb-8 ">Erstellen</h2>
-          <h1 className="text-3xl max-w-75 font-black mb-4">
-            Wähle eine Option aus, um fortzufahren.
-          </h1>
-        </div>
-      )}
+    <main className="min-h-screen px-4 pb-12 text-center">
+      {isGenerating && <LoadingSpinner />}
+      <section className="mx-auto max-w-3xl pt-12">
+        <h1 className="mb-4 text-5xl font-black">Erstellen</h1>
+        <p className="mx-auto mb-8 max-w-xl text-xl">
+          Beschreibe deine Idee und Gemini schreibt daraus eine ganze
+          Geschichte.
+        </p>
 
-      {currentScene < 5 && (
-        <>
-          <h1 className="text-2xl font-bold mb-4">Szene {currentScene}</h1>
-          <div className="flex flex-col gap-4 mb-4">
-            {isLoadingPrompts ? (
-              <LoadingSpGeneric />
-            ) : (
-              options.map((item) => {
-                const isSelected =
-                  selectedTitles[currentScene - 1] === item.title;
-                return (
-                  <Button
-                    key={item._id}
-                    variant={isSelected ? "quaternary" : "primary"}
-                    onClick={() => handleSelect(item.title)}
-                    disabled={mutation.isPending || isLoadingPrompts}
-                  >
-                    {item.title}
-                  </Button>
-                );
-              })
-            )}
-          </div>
-        </>
-      )}
-
-      <StoryNavigation
-        currentStep={currentScene}
-        onNext={currentScene === 5 ? handleSave : handleNext}
-        onPrevious={handlePrevious}
-        totalSteps={5}
-        disabled={
-          mutation.isPending ||
-          saveMutation.isPending ||
-          isSaving || // Add this flag
-          isLoadingPrompts ||
-          (currentScene < 5 && !selectedTitles[currentScene - 1])
-        }
-      />
-    </div>
+        <form onSubmit={handleGenerate} className="mx-auto max-w-2xl">
+          <label htmlFor="story-prompt" className="sr-only">
+            Deine Geschichtenidee
+          </label>
+          <textarea
+            id="story-prompt"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            placeholder="Zum Beispiel: Ein kleiner Fuchs findet im Wald eine Tür zu den Sternen ..."
+            rows={5}
+            disabled={isGenerating}
+            className="w-full rounded-2xl border-2 border-black bg-white/90 p-4 text-left text-lg shadow-[0_4px_0_0_rgba(0,0,0,1)] outline-none focus:ring-4 focus:ring-orange-300 disabled:opacity-60"
+          />
+          <Button
+            type="submit"
+            className="mt-6"
+            disabled={isGenerating || !prompt.trim()}
+          >
+            {isGenerating
+              ? "Geschichte wird geschrieben ..."
+              : "Geschichte erstellen"}
+          </Button>
+        </form>
+      </section>
+    </main>
   );
 }

@@ -1,135 +1,185 @@
 const express = require("express");
 const router = express.Router();
-const Prompt = require("../../models/Prompt");
-const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
-const authMiddleware = require("../../middleware/authMiddleware");
 
 require("dotenv").config();
 
-// AWS Bedrock client config
-const bedrockClient = new BedrockRuntimeClient({
-    region: process.env.AWS_REGION,
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        // sessionToken: process.env.AWS_SESSION_TOKEN,
-    },
-});
-
 // Test route
-router.get("/", authMiddleware, (req, res) => {
-    res.send(`Hello, this is the /api/contents/ route for ${req.user.name}`);
+router.get("/", (req, res) => {
+  res.send("Story generation is ready");
 });
 
-// Example route to generate text
-router.post("/generate", authMiddleware, async (req, res, next) => {
-    try {
-        let { title, beforeOutput } = req.body;
+// Generate one complete story from the user's prompt.
+router.post("/generate", async (req, res, next) => {
+  try {
+    const { prompt } = req.body;
 
-        if (!title) {
-            return res.status(400).json({ error: "Title is required" });
-        }
+    if (typeof prompt !== "string" || !prompt.trim()) {
+      return res.status(400).json({ error: "A story prompt is required" });
+    }
 
-        title = title.trim();
+    if (!process.env.GEMINI_API_KEY) {
+      return res
+        .status(500)
+        .json({ error: "GEMINI_API_KEY is not configured" });
+    }
 
-        // Fetch prompt from the database using the title
-        const promptData = await Prompt.findOne({ title });
+    const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`;
+    const instruction = `
+            Schreibe eine vollständige, kindgerechte Geschichte in derselben Sprache wie die Idee des Nutzers.
+            Wenn die Idee auf Englisch geschrieben ist, schreibe die Geschichte vollständig auf Englisch.
+            Übersetze die Idee nicht und wechsle nicht mitten in der Geschichte die Sprache.
+            Verwende einfache, lebendige Sprache und einen positiven, hoffnungsvollen Ton.
+            Die Geschichte soll einen klaren Anfang, eine spannende Mitte und ein schönes Ende haben.
+            Schreibe ungefähr 180 bis 250 Wörter und beende die Geschichte vollständig.
+            Beende immer mit einem vollständigen letzten Satz.
+            Beginne direkt mit der Geschichte, ohne Überschrift oder Erklärung.
 
-        if (!promptData) {
-            return res.status(404).json({ error: "Prompt not found" });
-        }
-
-        const { prompt, scene } = promptData;
-
-        // Constructing the prompt for text generation
-        let additionalInstructions = " ";
-
-        // Scene 1: Starting the story
-        if (scene === "1") {
-            additionalInstructions += `
-            Du wirst eine fortlaufende Kindergeschichte in vier Teilen erstellen. 
-            Jeder Abschnitt soll detailreich, lebendig und kindgerecht sein. 
-        
-            **Vorgaben für jeden Teil:**
-            - Nutze das Maximum an Zeichen für eine spannende Handlung.
-            - Verwende einfache, altersgerechte Sprache mit fantasievollen Beschreibungen.
-            - Jeder Abschnitt soll eine abgeschlossene Mini-Handlung haben, aber die Gesamtgeschichte fortführen.
-            - Stelle sicher, dass die Geschichte am Ende eine logische und zufriedenstellende Auflösung hat.
-            - Antwort ohne Meta-Beschreibungen oder Erklärungen. Nur die Geschichte selbst.
-            `;
-
-            additionalInstructions += `
-            **Inspiration für die erste Szene:**  
-            "${prompt}"
-            `;
-        }
-
-        // Scene > 1: Continuation of the story
-        if (scene > 1) {
-            additionalInstructions += `
-            Dies ist eine Fortsetzung der Geschichte. **Achte auf den bisherigen Verlauf und den Erzählstil.**  
-            **Vorgaben für den nächsten Abschnitt:**  
-            - Die Handlung soll **nahtlos** an die vorherige Ausgabe anschließen.  
-            - **Keine Wiederholungen** von ganzen Sätzen oder Dialogen aus vorherigen Teilen.  
-            - Antwort ohne Meta-Beschreibungen oder Erklärungen. Nur die Geschichte selbst.
-            - Entwickle Charaktere weiter und führe neue Details ein.  
-            - Beende den Abschnitt mit einem leichten Cliffhanger oder einer offenen Frage.  
-        
-            Vorherige Ausgabe zur Orientierung:
-            "${beforeOutput}"
-            `;
-        }
-        
-        // Final prompt with `prompt` and additional instructions
-        let finalPrompt = `
-        **Wichtige Anweisungen:**  
-        - Schreibe die Fortsetzung der Geschichte mit einem **positiven**, **hoffnungsvollen** oder **abenteuerlichen** Ton.  
-        - Vermeide düstere, tragische Wendungen. Stattdessen fokussiere dich auf den **Überlebenswillen**, **Zusammenhalt** oder **Magie**.  
-        - **Maximal 300 Wörter** und keine Wiederholungen aus der vorherigen Geschichte.   
-        - Die Geschichte soll einen **magischen** oder **hoffnungsvollen** Abschluss finden, der den Leser ermutigt.  
-        
-        ---
-        
-        **Bisherige Geschichte:**  
-        "${beforeOutput}"
-        
-        **Inspiration für die Fortsetzung (Prompt):**  
-        "${prompt}"
-
-        **Deine Aufgabe:**  
-        Schreibe eine Fortsetzung, in der die Charaktere **trotz der Herausforderungen** Hoffnung finden oder **eine unerwartete Hilfe** bekommen. Die Fortsetzung sollte kreative Lösungen, magische Ereignisse oder kleine Freuden im Chaos zeigen. Achte darauf, dass die Atmosphäre positiv und hoffnungsvoll bleibt.
-        Schreibe ohne Meta-Beschreibungen. Keine Überschrift wie 'Fortsetzung'. Beginne direkt mit der Geschichte.
+            Idee des Nutzers:
+            ${prompt.trim()}
         `.trim();
 
-        // Set model for Amazon Titan Text
-        const model = "amazon.titan-text-express-v1";
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    let response;
 
-        const command = new InvokeModelCommand({
-            modelId: model,
-            contentType: "application/json",
-            accept: "application/json",
-            body: JSON.stringify({
-                inputText: finalPrompt,
-                textGenerationConfig: {
-                    maxTokenCount: 550,
-                    temperature: 0.9,
-                    topP: 0.9,
-                }
-            })
-        });
-
-        const response = await bedrockClient.send(command);
-
-        // Correctly decode response
-        const responseData = JSON.parse(new TextDecoder().decode(response.body));
-
-        // Extract generated text (Titan returns results[0].outputText)
-        const resultText = responseData.results?.[0]?.outputText?.trim().replace(/^\n+/, '') || "No response generated";
-
-        res.json({ response: resultText });
+    try {
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: instruction }] }],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 4096,
+            thinkingConfig: {
+              thinkingLevel: "low",
+            },
+          },
+        }),
+      });
     } catch (error) {
-        next(error);
+      if (error.name === "AbortError") {
+        return res.status(504).json({
+          error: "Gemini hat zu lange gebraucht. Bitte versuche es erneut.",
+        });
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
     }
+
+    const responseData = await response.json();
+    if (!response.ok) {
+      console.error("Gemini API error:", responseData);
+      return res
+        .status(502)
+        .json({ error: "Gemini konnte die Geschichte nicht erstellen" });
+    }
+
+    const candidate = responseData.candidates?.[0];
+    if (candidate?.finishReason === "MAX_TOKENS") {
+      return res.status(502).json({
+        error:
+          "Gemini hat die Geschichte vor dem Ende abgeschnitten. Bitte versuche es erneut.",
+      });
+    }
+
+    const resultText = candidate?.content?.parts
+      ?.map((part) => part.text)
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+
+    if (!resultText) {
+      return res
+        .status(502)
+        .json({ error: "Gemini hat keine Geschichte zurückgegeben" });
+    }
+
+    res.json({ response: resultText });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Generate an illustration for the final story paragraph.
+router.post("/generate-image", async (req, res, next) => {
+  try {
+    const { paragraph } = req.body;
+
+    if (typeof paragraph !== "string" || !paragraph.trim()) {
+      return res.status(400).json({ error: "A story paragraph is required" });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res
+        .status(500)
+        .json({ error: "GEMINI_API_KEY is not configured" });
+    }
+
+    const model = process.env.GEMINI_IMAGE_MODEL || "gemini-nano-banana-2.1";
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`;
+    const instruction = `
+      Create a warm, colorful children's book illustration based on this final story scene.
+      Keep the image wholesome, imaginative, and suitable for young children.
+      Do not add any text, letters, captions, logos, or watermarks.
+
+      Final story scene:
+      ${paragraph.trim()}
+    `.trim();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45000);
+    let response;
+
+    try {
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: instruction }] }],
+          generationConfig: {
+            responseModalities: ["IMAGE"],
+          },
+        }),
+      });
+    } catch (error) {
+      if (error.name === "AbortError") {
+        return res.status(504).json({
+          error: "Gemini hat zu lange gebraucht, um das Bild zu erstellen.",
+        });
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    const responseData = await response.json();
+    if (!response.ok) {
+      console.error("Gemini image API error:", responseData);
+      return res
+        .status(502)
+        .json({ error: "Gemini konnte das Bild nicht erstellen" });
+    }
+
+    const imagePart = responseData.candidates?.[0]?.content?.parts?.find(
+      (part) => part.inlineData?.data,
+    );
+
+    if (!imagePart) {
+      return res.status(502).json({
+        error: "Gemini hat kein Bild zurückgegeben. Prüfe GEMINI_IMAGE_MODEL.",
+      });
+    }
+
+    res.json({
+      image: `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`,
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;

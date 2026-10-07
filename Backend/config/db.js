@@ -6,6 +6,11 @@ const db = process.env.MONGO_URI;
 mongoose.set("strictQuery", true);
 
 const connectDB = async () => {
+  if (!db || db.includes("<cluster>") || db.includes("<username>")) {
+    console.warn("MONGO_URI is not configured; running without MongoDB.");
+    return;
+  }
+
   try {
     await mongoose.connect(db);
     console.log("MongoDB is Connected...");

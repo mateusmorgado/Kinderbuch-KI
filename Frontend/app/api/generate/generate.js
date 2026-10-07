@@ -1,49 +1,30 @@
-const getAuthHeader = () => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    return token ? `Bearer ${token}` : "";
-  }
-  return "";
-};
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export async function fetchPrompts(scene) {
-  const res = await fetch(`${API_BASE_URL}/api/prompts?scene=${scene}`, {
-    headers: {
-      Authorization: getAuthHeader(),
-    },
-  });
-  if (!res.ok) throw new Error("Prompts konnten nicht geladen werden!");
-  return res.json();
-}
-
-export async function generateStory({ title, beforeOutput }) {
+export async function generateStory({ prompt }) {
   const res = await fetch(`${API_BASE_URL}/api/contents/generate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: getAuthHeader(),
     },
-    body: JSON.stringify({ title, beforeOutput }),
+    body: JSON.stringify({ prompt }),
   });
-  if (!res.ok) throw new Error("Geschichte konnte nicht generiert werden!");
-  return res.json();
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.error || "Geschichte konnte nicht generiert werden!");
+  return data;
 }
 
-export async function saveStory({ userId, title, content }) {
-  const res = await fetch(`${API_BASE_URL}/api/stories`, {
+export async function generateStoryImage({ paragraph }) {
+  const res = await fetch(`${API_BASE_URL}/api/contents/generate-image`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: getAuthHeader(),
     },
-    body: JSON.stringify({
-      userId: userId || "anonymous",
-      title: title,
-      content: content,
-    }),
+    body: JSON.stringify({ paragraph }),
   });
-  if (!res.ok) throw new Error("Geschichte konnte nicht gespeichert werden!");
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Bild konnte nicht erstellt werden!");
+  }
+  return data;
 }
