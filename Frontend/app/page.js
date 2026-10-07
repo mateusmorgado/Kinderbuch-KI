@@ -1,23 +1,11 @@
 "use client";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Button from "./components/Button";
 import Image from "next/image";
 
 export default function Home() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem("token");
-    if (token) {
-      router.push("/dashboard");
-    }
-  }, [router]);
-
   return (
     <>
-     <div className="fixed -right-9 -bottom-5 md:-bottom-1 md:right-15 block slide-in-bt">
+      <div className="fixed -right-9 -bottom-5 md:-bottom-1 md:right-15 block slide-in-bt">
         <Image
           src="/misc/girl-mag.png"
           alt="Girl illustration"
@@ -63,15 +51,9 @@ export default function Home() {
         </div>
 
         <div className="w-60 font-black grid grid-cols-1 gap-4 justify-items-center ">
-          <Button variant="primary" className="w-60" href="/register">
-            Registrieren
+          <Button variant="primary" className="w-60" href="/generate">
+            Experiment starten
           </Button>
-          <Button variant="secondary" className="w-60" href="/login">
-            Login
-          </Button>
-          {/* <Button variant="tertiary" className="w-60" href="/generate">
-            Ausprobieren🪄
-          </Button> */}
         </div>
       </div>
     </>
