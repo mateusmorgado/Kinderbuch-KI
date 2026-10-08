@@ -4,6 +4,12 @@
   <img src="./ki.gif" alt="Kinderbuch-KI Demo" width="150">
 </p>
 
+<p align="center" style="margin-top: 20px; margin-bottom: 20px;">
+  👉 <strong>Try the app here:</strong><br>
+  https://kinderbuch-ki.vercel.app/
+</p>
+
+
 
 ## Einführung
 
