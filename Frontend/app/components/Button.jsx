@@ -53,6 +53,11 @@ export default function Button({
     variantClasses =
       "bg-[image:var(--calm)] ring-2 hover:filter hover:saturate-190 active:filter active:saturate-190 " +
       "transition ease-in-out duration-250 hover-glitter active:scale-95";
+  } else if (variant === "glow") {
+    variantClasses =
+      "bg-gradient-to-r from-pink-400 via-fuchsia-500 to-orange-300 text-white ring-2 ring-pink-200 " +
+      "shadow-[0_0_24px_rgba(236,72,153,0.55),0_4px_0_0_rgba(0,0,0,1)] " +
+      "transition duration-250 hover:scale-105 hover:shadow-[0_0_34px_rgba(236,72,153,0.75),0_4px_0_0_rgba(0,0,0,1)] active:scale-95";
   }
 
   const classes = `${baseClasses} ${variantClasses} ${className} ${

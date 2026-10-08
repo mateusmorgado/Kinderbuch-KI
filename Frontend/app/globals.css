@@ -7,6 +7,14 @@
 
   --peace: linear-gradient(190deg, #f7c898 15.21%, #def0f5 83.3%);
 }
+
+html[data-theme="night"] body {
+  color: #f8f1ff;
+}
+
+html[data-theme="night"] .site-background {
+  filter: brightness(0.48) saturate(0.8) hue-rotate(12deg);
+}
 .slide-in-lr {
   animation: slideIn-lr 1.5s ease-out forwards;
 }
@@ -87,5 +95,7 @@
 
 .debug {
   outline: 2px solid red;
-  box-shadow: 0 0 0 5px red, 0 0 0 4px red;
+  box-shadow:
+    0 0 0 5px red,
+    0 0 0 4px red;
 }

@@ -1,10 +1,31 @@
 "use client";
 import Button from "./components/Button";
+import ExperienceControls, {
+  useLanguagePreference,
+} from "./components/ExperienceControls";
 import Image from "next/image";
 
+const contributors = [
+  { name: "Mateus Morgado", href: "https://github.com/mateusmorgado" },
+  { name: "jpg344", href: "https://github.com/jpg344" },
+  { name: "Rosa Chapoteau", href: "https://github.com/XRayhanna" },
+  {
+    name: "Koray Goekalp",
+    href: "https://github.com/search?q=Koray+Goekalp&type=users",
+  },
+  { name: "kogo1011", href: "https://github.com/kogo1011" },
+  { name: "Rene", href: "https://github.com/renapEvil" },
+];
+
 export default function Home() {
+  const [language] = useLanguagePreference();
+  const isGerman = language === "de";
+
   return (
     <>
+      <div className="fixed right-4 top-4 z-20">
+        <ExperienceControls />
+      </div>
       <div className="fixed -right-9 -bottom-5 md:-bottom-1 md:right-15 block slide-in-bt">
         <Image
           src="/misc/girl-mag.png"
@@ -47,14 +68,38 @@ export default function Home() {
         <div className="mx-64"></div>
 
         <div className="text-3xl font-black max-w-[14rem] sm:max-w-none mx-auto">
-          Wo Träume zu Geschichten werden
+          {isGerman
+            ? "Wo Träume zu Geschichten werden"
+            : "Where dreams become stories"}
         </div>
 
         <div className="w-60 font-black grid grid-cols-1 gap-4 justify-items-center ">
-          <Button variant="primary" className="w-60" href="/generate">
-            Experiment starten
+          <Button variant="glow" className="w-60" href="/generate">
+            {isGerman ? "Experiment starten" : "Start experiment"}
           </Button>
         </div>
+
+        <footer className="mt-6 max-w-3xl pb-2 text-xs font-bold">
+          <p className="mb-1 uppercase tracking-widest opacity-70">
+            {isGerman ? "Mitwirkende" : "Contributors"}
+          </p>
+          <p className="leading-relaxed opacity-80">
+            {contributors.map((contributor, index) => (
+              <span key={contributor.name}>
+                {index > 0 && " · "}
+                <a
+                  href={contributor.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-opacity hover:opacity-70 hover:underline hover:underline-offset-2 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-1"
+                  aria-label={`Visit ${contributor.name} on GitHub`}
+                >
+                  {contributor.name}
+                </a>
+              </span>
+            ))}
+          </p>
+        </footer>
       </div>
     </>
   );
