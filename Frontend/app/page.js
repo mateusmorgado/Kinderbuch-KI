@@ -1,4 +1,6 @@
 "use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Button from "./components/Button";
 import ExperienceControls, {
   useLanguagePreference,
@@ -18,8 +20,16 @@ const contributors = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [language] = useLanguagePreference();
   const isGerman = language === "de";
+
+  useEffect(() => {
+    // Logged-in users go straight to their dashboard
+    if (localStorage.getItem("token")) {
+      router.push("/dashboard");
+    }
+  }, [router]);
 
   return (
     <>
@@ -74,6 +84,12 @@ export default function Home() {
         </div>
 
         <div className="w-60 font-black grid grid-cols-1 gap-4 justify-items-center ">
+          <Button variant="primary" className="w-60" href="/register">
+            {isGerman ? "Registrieren" : "Sign up"}
+          </Button>
+          <Button variant="secondary" className="w-60" href="/login">
+            {isGerman ? "Login" : "Log in"}
+          </Button>
           <Button variant="glow" className="w-60" href="/generate">
             {isGerman ? "Experiment starten" : "Start experiment"}
           </Button>
