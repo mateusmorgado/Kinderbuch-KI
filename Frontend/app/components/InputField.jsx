@@ -13,7 +13,7 @@ export default function InputField({
       {label && (
         <label
           htmlFor={id}
-          className="mb-2 ml-2 inline-block rounded-full bg-black/55 px-3 py-1 text-sm font-bold text-white backdrop-blur-sm"
+          className="mb-2 block px-2 text-sm font-medium leading-6"
         >
           {label}
         </label>

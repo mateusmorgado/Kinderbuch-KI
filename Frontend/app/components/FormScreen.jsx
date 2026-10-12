@@ -24,11 +24,11 @@ export default function FormScreen({
         {header && <div className="md:absolute md:inset-x-0 md:top-6">{header}</div>}
 
         <div className="mt-8 text-center md:mt-0">
-          <h1 className="text-4xl font-black leading-tight text-white [text-shadow:0_2px_0_rgba(0,0,0,0.3),0_4px_16px_rgba(0,0,0,0.5)] sm:text-5xl">
+          <h1 className="text-4xl font-black leading-tight sm:text-5xl">
             {title}
           </h1>
           {subtitle && (
-            <p className="mx-auto mt-4 max-w-xs text-lg font-medium text-white [text-shadow:0_1px_0_rgba(0,0,0,0.3),0_2px_10px_rgba(0,0,0,0.55)]">
+            <p className="mx-auto mt-4 max-w-xs text-lg">
               {subtitle}
             </p>
           )}
@@ -41,7 +41,7 @@ export default function FormScreen({
         <div className="flex flex-col items-center gap-5">
           {actions}
           {footer && (
-            <p className="rounded-full bg-black/55 px-4 py-2 text-center text-base text-white backdrop-blur-sm">
+            <p className="text-center text-base">
               {footer}
             </p>
           )}
@@ -56,7 +56,7 @@ export function FormLink({ href, children }) {
   return (
     <a
       href={href}
-      className="font-black underline underline-offset-4 decoration-2 hover:opacity-80"
+      className="font-semibold text-indigo-600 hover:text-indigo-500"
     >
       {children}
     </a>

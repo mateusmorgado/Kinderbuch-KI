@@ -78,7 +78,7 @@ export default function GeneratePage() {
             <Button
               type="button"
               variant="tertiary"
-              className="min-h-11 px-0 text-base text-white shadow-none [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]"
+              className="min-h-11 px-0 text-base shadow-none"
               onClick={() => router.push("/")}
             >
               <span aria-hidden="true">←</span> {isGerman ? "Startseite" : "Home"}
