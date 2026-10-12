@@ -56,7 +56,7 @@ export function FormLink({ href, children }) {
   return (
     <a
       href={href}
-      className="font-semibold text-indigo-600 hover:text-indigo-500"
+      className="font-semibold text-indigo-600 hover:text-indigo-500 night:text-indigo-300 night:hover:text-indigo-200"
     >
       {children}
     </a>

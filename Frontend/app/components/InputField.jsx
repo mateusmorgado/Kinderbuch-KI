@@ -28,7 +28,7 @@ export default function InputField({
         autoComplete={autoComplete}
         autoCapitalize={type === "text" ? "none" : undefined}
         placeholder={placeholder}
-        className="block min-h-14 w-full rounded-[1.7rem] border-2 border-black/10 bg-white px-5 py-3 text-base text-gray-900 shadow-[0_4px_0_0_rgba(0,0,0,0.9)] outline-none placeholder:text-gray-500 focus:ring-4 focus:ring-orange-300"
+        className="block min-h-14 w-full rounded-[1.7rem] border-2 border-black/10 bg-white px-5 py-3 text-base text-gray-900 shadow-[0_4px_0_0_rgba(0,0,0,0.9)] outline-none placeholder:text-gray-500 focus:ring-4 focus:ring-orange-300 night:border-white/25 night:bg-white/10 night:text-white night:shadow-[0_4px_0_0_rgba(0,0,0,0.7)] night:backdrop-blur-md night:placeholder:text-white/55"
       />
     </div>
   );

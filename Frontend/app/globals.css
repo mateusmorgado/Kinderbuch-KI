@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Use as night:<utility> for night-mode styling. */
+@custom-variant night (&:where([data-theme="night"], [data-theme="night"] *));
+
 :root {
   --adventure: linear-gradient(to bottom left, #ed443a 10.13%, #fca43c 64.09%);
   --curiosity: linear-gradient(to bottom right, #a4eaef 17.06%, #9c8cfa 85.11%);
@@ -13,7 +16,9 @@ html[data-theme="night"] body {
 }
 
 html[data-theme="night"] .site-background {
-  filter: brightness(0.48) saturate(0.8) hue-rotate(12deg);
+  /* Invert the artwork into a deep night sky, then rotate hues back so the
+     purple / pink / orange glow keeps its original colours. */
+  filter: invert(1) hue-rotate(180deg) saturate(1.1) brightness(0.85);
 }
 .slide-in-lr {
   animation: slideIn-lr 1.5s ease-out forwards;
