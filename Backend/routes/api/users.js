@@ -4,77 +4,105 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
+const { USERNAME_REGEX } = User;
 const RefreshToken = require("../../models/RefreshToken");
 const authMiddleware = require("../../middleware/authMiddleware");
-const { logger } = require("../../middleware/logging");  
+const { logger } = require("../../middleware/logging");
 
-// Get all users
+const MIN_PASSWORD_LENGTH = 6;
+const MAX_PASSWORD_LENGTH = 72; // bcrypt ignores everything after 72 bytes
+
+// Users may only read or change their own account.
+const ownAccountOnly = (req, res, next) => {
+    if (req.params.id !== req.user.id) {
+        return res.status(403).json({ error: "Not allowed to access this user." });
+    }
+    next();
+};
+
+// Get the logged-in user
 router.get("/", authMiddleware, async (req, res, next) => {
     try {
-        const users = await User.find();
-        logger.info(`Fetched all users - Count: ${users.length}`);
-        res.status(200).json(users);
+        const user = await User.findById(req.user.id).select("-passwordHash");
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+        res.status(200).json([user]);
     } catch (error) {
         next(error);
     }
 });
 
-// Get user by ID
-router.get("/:id", authMiddleware, async (req, res, next) => {
+// Get user by ID (own account only)
+router.get("/:id", authMiddleware, ownAccountOnly, async (req, res, next) => {
     try {
-        const user = await User.findById(req.params.id).populate("createdStories");
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        const user = await User.findById(req.params.id)
+            .select("-passwordHash")
+            .populate("createdStories");
 
         if (!user) {
             logger.warn(`User with ID ${req.params.id} not found`);
             return res.status(404).json({ error: "User not found." });
         }
 
-        logger.info(`Fetched user ${req.params.id} - ${user.email}`);
+        logger.info(`Fetched user ${req.params.id} - ${user.username}`);
         res.status(200).json(user);
     } catch (error) {
         next(error);
     }
 });
 
-// Create a new user
+// Create a new user (username + password)
 router.post("/", async (req, res, next) => {
     try {
-        const { email, password, displayName } = req.body; 
+        const { username, password } = req.body;
 
-        if (!email || !password) {
+        if (!username || !password) {
             logger.warn("User creation failed - Missing fields");
-            return res.status(400).json({ error: "Email and password are required." });
+            return res.status(400).json({ error: "Username and password are required." });
         }
 
-        const sanitizedEmail = String(email).trim().toLowerCase();
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        const sanitizedUsername = String(username).trim().toLowerCase();
 
-        if (!emailRegex.test(sanitizedEmail)) {
-            logger.warn(`User creation failed - Invalid email format: ${sanitizedEmail}`);
-            return res.status(400).json({ error: "Invalid email format." });
+        if (!USERNAME_REGEX.test(sanitizedUsername)) {
+            logger.warn(`User creation failed - Invalid username: ${sanitizedUsername}`);
+            return res.status(400).json({
+                error: "Username must be 3-30 characters (letters, numbers, . _ -).",
+            });
         }
 
-        const existingUser = await User.findOne({ email: sanitizedEmail }).lean();
+        const passwordText = String(password);
+        if (passwordText.length < MIN_PASSWORD_LENGTH || passwordText.length > MAX_PASSWORD_LENGTH) {
+            return res.status(400).json({
+                error: `Password must be ${MIN_PASSWORD_LENGTH}-${MAX_PASSWORD_LENGTH} characters long.`,
+            });
+        }
+
+        const existingUser = await User.findOne({ username: sanitizedUsername }).lean();
         if (existingUser) {
-            logger.warn(`User creation failed - Email already exists: ${sanitizedEmail}`);
-            return res.status(400).json({ error: "User already exists." });
+            logger.warn(`User creation failed - Username already exists: ${sanitizedUsername}`);
+            return res.status(400).json({ error: "Username is already taken." });
         }
 
         // Hash the password before saving it to the database
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(passwordText, 10);
 
         const newUser = new User({
-            email: sanitizedEmail,
+            username: sanitizedUsername,
             passwordHash: hashedPassword,
-            displayName: displayName || "",
+            displayName: sanitizedUsername,
         });
 
         await newUser.save();
 
-        logger.info(`New user created: ${sanitizedEmail}`);
+        logger.info(`New user created: ${sanitizedUsername}`);
 
         // Generate tokens
-        const payload = { id: newUser._id, name: newUser.displayName, email: newUser.email };
+        const payload = { id: newUser._id, name: newUser.displayName, username: newUser.username };
         const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "5d" });
         const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
 
@@ -89,7 +117,7 @@ router.post("/", async (req, res, next) => {
             path: "/",
         });
 
-        res.cookie("auth", JSON.stringify({ id: newUser._id, displayName: newUser.displayName, email: newUser.email }), {
+        res.cookie("auth", JSON.stringify({ id: newUser._id, displayName: newUser.displayName, username: newUser.username }), {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
@@ -102,7 +130,7 @@ router.post("/", async (req, res, next) => {
             user: {
                 id: newUser._id,
                 displayName: newUser.displayName,
-                email: newUser.email,
+                username: newUser.username,
             },
         });
     } catch (error) {
@@ -112,14 +140,24 @@ router.post("/", async (req, res, next) => {
 });
 
 
-// Update user by ID
-router.put("/:id", authMiddleware, async (req, res, next) => {
+// Update the display name / kids' names of your own account
+router.put("/:id", authMiddleware, ownAccountOnly, async (req, res, next) => {
     try {
+        const updates = { updatedAt: Date.now() };
+        if (typeof req.body.displayName === "string") {
+            updates.displayName = req.body.displayName.trim().slice(0, 60);
+        }
+        if (Array.isArray(req.body.kidsNames)) {
+            updates.kidsNames = req.body.kidsNames
+                .filter((name) => typeof name === "string")
+                .map((name) => name.trim().slice(0, 60));
+        }
+
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
-            { $set: req.body, updatedAt: Date.now() },
+            { $set: updates },
             { new: true }
-        );
+        ).select("-passwordHash");
 
         if (!updatedUser) {
             logger.warn(`User update failed - ID ${req.params.id} not found`);
@@ -133,8 +171,8 @@ router.put("/:id", authMiddleware, async (req, res, next) => {
     }
 });
 
-// Delete user by ID
-router.delete("/:id", authMiddleware, async (req, res, next) => {
+// Delete your own account
+router.delete("/:id", authMiddleware, ownAccountOnly, async (req, res, next) => {
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
 
@@ -142,6 +180,8 @@ router.delete("/:id", authMiddleware, async (req, res, next) => {
             logger.warn(`User deletion failed - ID ${req.params.id} not found`);
             return res.status(404).json({ error: "User not found." });
         }
+
+        await RefreshToken.deleteMany({ userId: deletedUser._id });
 
         logger.info(`User deleted: ${req.params.id}`);
         res.status(200).json({ message: "User deleted successfully." });

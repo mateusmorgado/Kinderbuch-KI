@@ -8,7 +8,11 @@ import ExperienceControls, {
   useLanguagePreference,
 } from "../components/ExperienceControls";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { generateStory } from "../api/generate/generate";
+import {
+  generateStory,
+  isLoggedIn,
+  saveStory,
+} from "../api/generate/generate";
 
 export default function GeneratePage() {
   const router = useRouter();
@@ -27,9 +31,32 @@ export default function GeneratePage() {
     setIsGenerating(true);
     try {
       const data = await generateStory({ prompt });
+
+      // Logged-in users get the story saved to their library automatically.
+      let storyId = null;
+      if (isLoggedIn()) {
+        try {
+          const saved = await saveStory({
+            prompt: prompt.trim(),
+            text: data.response,
+          });
+          storyId = saved._id;
+        } catch {
+          toast.error(
+            isGerman
+              ? "Die Geschichte konnte nicht gespeichert werden."
+              : "The story could not be saved.",
+          );
+        }
+      }
+
       sessionStorage.setItem(
         "generatedStory",
-        JSON.stringify({ prompt: prompt.trim(), story: data.response }),
+        JSON.stringify({
+          prompt: prompt.trim(),
+          story: data.response,
+          storyId,
+        }),
       );
       toast.success("Geschichte erfolgreich erstellt!");
       router.push("/story-result");

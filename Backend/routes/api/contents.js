@@ -1,7 +1,60 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
+const optionalAuth = require("../../middleware/optionalAuth");
+const { logger } = require("../../middleware/logging");
+const Story = require("../../models/Story");
+const storage = require("../../services/storage");
 
 require("dotenv").config();
+
+// Stores a generated image for the user's story. Never throws: the image is
+// still returned to the client when saving fails.
+const saveImageToStory = async ({ user, storyId, image }) => {
+  if (!storyId) return { saved: false };
+  if (!user) return { saved: false, saveError: "not-logged-in" };
+  if (!storage.isConfigured()) {
+    return { saved: false, saveError: "storage-not-configured" };
+  }
+
+  try {
+    if (!mongoose.isValidObjectId(storyId)) {
+      return { saved: false, saveError: "story-not-found" };
+    }
+
+    const story = await Story.findOne({ _id: storyId, userId: user.id });
+    if (!story) return { saved: false, saveError: "story-not-found" };
+
+    const parsed = storage.parseDataUrl(image);
+    if (!parsed) return { saved: false, saveError: "invalid-image" };
+
+    const objectName = await storage.uploadStoryImage({
+      userId: user.id,
+      storyId: story._id.toString(),
+      ...parsed,
+    });
+
+    // The illustration belongs to the final scene of the story.
+    const section = story.content[story.content.length - 1];
+    const previousImagePath = section.imagePath;
+    section.imagePath = objectName;
+    section.image = "";
+    story.updatedAt = Date.now();
+    await story.save();
+
+    if (previousImagePath) {
+      storage.deleteObject(previousImagePath).catch((error) => {
+        logger.error(`Could not delete old image ${previousImagePath}: ${error.message}`);
+      });
+    }
+
+    logger.info(`Image saved for story ${story._id}: ${objectName}`);
+    return { saved: true, storyId: story._id.toString() };
+  } catch (error) {
+    logger.error(`Saving image failed: ${error.message}`);
+    return { saved: false, saveError: "storage-failed" };
+  }
+};
 
 // Test route
 router.get("/", (req, res) => {
@@ -105,7 +158,9 @@ router.post("/generate", async (req, res, next) => {
 });
 
 // Generate an illustration for the final story paragraph.
-router.post("/generate-image", async (req, res, next) => {
+// With a valid login and a `storyId`, the image is also stored in the Google
+// Cloud Storage bucket and attached to that story.
+router.post("/generate-image", optionalAuth, async (req, res, next) => {
   try {
     const { paragraph } = req.body;
 
@@ -174,9 +229,14 @@ router.post("/generate-image", async (req, res, next) => {
       });
     }
 
-    res.json({
-      image: `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`,
+    const image = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+    const saveResult = await saveImageToStory({
+      user: req.user,
+      storyId: req.body.storyId,
+      image,
     });
+
+    res.json({ image, ...saveResult });
   } catch (error) {
     next(error);
   }

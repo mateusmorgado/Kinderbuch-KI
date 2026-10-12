@@ -17,6 +17,9 @@ export default function StoryCard({ story }) {
   // Get a preview of the first part of the story
   const previewText = story.content[0]?.text.substring(0, 100) + "...";
 
+  // Illustration saved with the story (signed cloud storage URL), if any
+  const coverImage = story.content.find((section) => section.image)?.image;
+
   return (
     <div
       className={`p-[3px] rounded-xl cursor-pointer hover:scale-[1.02] transition-transform duration-300`}
@@ -24,6 +27,16 @@ export default function StoryCard({ story }) {
       onClick={() => router.push(`/story/${story._id}`)}
     >
       <div className="bg-[rgba(255,255,255,0.92)] shadow-[inset_0px_4px_20px_0px_rgba(0,10,120,0.15)] backdrop-blur-md rounded-lg overflow-hidden h-full flex flex-col">
+        {coverImage && (
+          <Image
+            src={coverImage}
+            alt={story.title}
+            width={400}
+            height={200}
+            unoptimized
+            className="h-36 w-full object-cover"
+          />
+        )}
         <div className="p-5 flex-1">
           <h3 className="text-xl font-bold truncate">{story.title}</h3>
           <p className="text-sm text-gray-500 mb-3">{formattedDate}</p>

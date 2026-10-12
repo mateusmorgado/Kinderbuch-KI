@@ -5,132 +5,194 @@ const authMiddleware = require("../../middleware/authMiddleware");
 const { logger } = require("../../middleware/logging");
 const Story = require("../../models/Story");
 const User = require("../../models/User");
+const storage = require("../../services/storage");
 
-// Get all stories
+const MAX_TITLE_LENGTH = 120;
+const MAX_TEXT_LENGTH = 20000;
+
+// Turns a stored story into the API shape: GCS object paths are replaced by
+// short-lived signed URLs in `image`, and the internal path is not exposed.
+const serializeStory = async (story) => {
+  const plain = story.toObject ? story.toObject() : story;
+
+  const content = await Promise.all(
+    (plain.content || []).map(async ({ imagePath, image, ...section }) => {
+      let imageUrl = image || "";
+      if (imagePath) {
+        try {
+          imageUrl = await storage.getSignedUrl(imagePath);
+        } catch (error) {
+          logger.error(`Could not sign image URL: ${error.message}`);
+        }
+      }
+      return { ...section, image: imageUrl, hasImage: Boolean(imagePath || image) };
+    }),
+  );
+
+  return { ...plain, content };
+};
+
+const buildTitle = (title, prompt) => {
+  const candidate =
+    (typeof title === "string" && title.trim()) ||
+    (typeof prompt === "string" && prompt.trim().split(/[.!?\n]/)[0]) ||
+    "Deine Geschichte";
+  return candidate.slice(0, MAX_TITLE_LENGTH);
+};
+
+const findOwnedStory = async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    res.status(404).json({ error: "Story not found." });
+    return null;
+  }
+
+  const story = await Story.findById(req.params.id);
+  if (!story) {
+    logger.warn(`Story with ID ${req.params.id} not found`);
+    res.status(404).json({ error: "Story not found." });
+    return null;
+  }
+
+  if (story.userId.toString() !== req.user.id) {
+    logger.warn(
+      `User ${req.user.id} tried to access story ${req.params.id} of another user`,
+    );
+    res.status(403).json({ error: "Not allowed to access this story." });
+    return null;
+  }
+
+  return story;
+};
+
+// Get all stories of the logged-in user
 router.get("/", authMiddleware, async (req, res, next) => {
-    try {
-        const stories = await Story.find();
-        logger.info(`Fetched all stories - Count: ${stories.length}`);
-        res.status(200).json(stories);
-    } catch (error) {
-        next(error); // Pass error to centralized error handler
-    }
+  try {
+    const stories = await Story.find({ userId: req.user.id }).sort({
+      createdAt: 1,
+    });
+    logger.info(`Fetched stories of user ${req.user.id} - Count: ${stories.length}`);
+    res.status(200).json(await Promise.all(stories.map(serializeStory)));
+  } catch (error) {
+    next(error);
+  }
 });
 
-// Get a single story by ID
-router.get("/:id", authMiddleware, async (req, res, next) => {
-    try {
-        const story = await Story.findById(req.params.id);
-        if (!story) {
-            logger.warn(`Story with ID ${req.params.id} not found`);
-            return res.status(404).json({ error: "Story not found." });
-        }
-
-        logger.info(`Fetched story ${req.params.id} - Title: ${story.title}`);
-        res.status(200).json(story);
-    } catch (error) {
-        next(error);
-    }
-});
-
-// Get all stories by a specific user
+// Get all stories by a specific user (only your own)
 router.get("/user/:userId", authMiddleware, async (req, res, next) => {
-    try {
-        const userStories = await Story.find({ userId: req.params.userId });
-        if (!userStories.length) {
-            logger.warn(`No stories found for user ${req.params.userId}`);
-            return res.status(404).json({ error: "No stories found for this user." });
-        }
-
-        logger.info(`Fetched ${userStories.length} stories for user ${req.params.userId}`);
-        res.status(200).json(userStories);
-    } catch (error) {
-        next(error);
+  try {
+    if (req.params.userId !== req.user.id) {
+      return res.status(403).json({ error: "Not allowed to access these stories." });
     }
+
+    const stories = await Story.find({ userId: req.params.userId }).sort({
+      createdAt: 1,
+    });
+    logger.info(`Fetched ${stories.length} stories for user ${req.params.userId}`);
+    res.status(200).json(await Promise.all(stories.map(serializeStory)));
+  } catch (error) {
+    next(error);
+  }
 });
 
-// Create a new story
+// Get a single story by ID (only the owner)
+router.get("/:id", authMiddleware, async (req, res, next) => {
+  try {
+    const story = await findOwnedStory(req, res);
+    if (!story) return;
+
+    logger.info(`Fetched story ${req.params.id} - Title: ${story.title}`);
+    res.status(200).json(await serializeStory(story));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Create a new story. Accepts either `text` (one string) or `content`
+// (array of { text } scenes). Images are attached afterwards through
+// POST /api/contents/generate-image with the returned story id.
 router.post("/", authMiddleware, async (req, res, next) => {
-    try {
-        const { title, content } = req.body;
+  try {
+    const { title, prompt, text, content } = req.body;
 
-        if (!title || !content || !Array.isArray(content)) {
-            logger.warn(`Story creation failed - Invalid input from user ${req.user.id}`);
-            return res.status(400).json({ error: "Title and valid content are required." });
-        }
-
-        const newStory = new Story({
-            id: new mongoose.Types.ObjectId().toString(), // Generate unique ID
-            userId: req.user.id,
-            title,
-            content,
-        });
-
-        await newStory.save();
-
-        await User.findByIdAndUpdate(req.user.id, {
-            $push: { createdStories: new mongoose.Types.ObjectId(newStory._id) },
-        });
-
-        logger.info(`New story created: ${newStory.title} by user ${req.user.id}`);
-        res.status(201).json(newStory);
-    } catch (error) {
-        next(error);
+    let scenes = [];
+    if (Array.isArray(content)) {
+      scenes = content
+        .filter((scene) => typeof scene?.text === "string" && scene.text.trim())
+        .map((scene, index) => ({ id: index + 1, text: scene.text.trim() }));
+    } else if (typeof text === "string" && text.trim()) {
+      scenes = [{ id: 1, text: text.trim() }];
     }
+
+    if (!scenes.length || scenes.some((scene) => scene.text.length > MAX_TEXT_LENGTH)) {
+      logger.warn(`Story creation failed - Invalid input from user ${req.user.id}`);
+      return res.status(400).json({ error: "Valid story text is required." });
+    }
+
+    const newStory = await Story.create({
+      userId: req.user.id,
+      title: buildTitle(title, prompt),
+      prompt: typeof prompt === "string" ? prompt.trim().slice(0, 2000) : "",
+      content: scenes,
+    });
+
+    await User.findByIdAndUpdate(req.user.id, {
+      $push: { createdStories: newStory._id },
+    });
+
+    logger.info(`New story created: ${newStory.title} by user ${req.user.id}`);
+    res.status(201).json(await serializeStory(newStory));
+  } catch (error) {
+    next(error);
+  }
 });
 
-// Update a story by ID (only owner can update)
+// Rename a story (only the owner)
 router.put("/:id", authMiddleware, async (req, res, next) => {
-    try {
-        const story = await Story.findById(req.params.id);
-        if (!story) {
-            logger.warn(`Story update failed - ID ${req.params.id} not found`);
-            return res.status(404).json({ error: "Story not found." });
-        }
+  try {
+    const story = await findOwnedStory(req, res);
+    if (!story) return;
 
-        if (story.userId.toString() !== req.user.id) {
-            logger.warn(`Unauthorized update attempt by user ${req.user.id} on story ${req.params.id}`);
-            return res.status(403).json({ error: "Unauthorized to update this story." });
-        }
-
-        const updatedStory = await Story.findByIdAndUpdate(
-            req.params.id,
-            { $set: req.body, updatedAt: Date.now() },
-            { new: true }
-        );
-
-        logger.info(`Story updated: ${req.params.id} by user ${req.user.id}`);
-        res.status(200).json(updatedStory);
-    } catch (error) {
-        next(error);
+    if (typeof req.body.title !== "string" || !req.body.title.trim()) {
+      return res.status(400).json({ error: "A title is required." });
     }
+
+    story.title = req.body.title.trim().slice(0, MAX_TITLE_LENGTH);
+    story.updatedAt = Date.now();
+    await story.save();
+
+    logger.info(`Story updated: ${req.params.id} by user ${req.user.id}`);
+    res.status(200).json(await serializeStory(story));
+  } catch (error) {
+    next(error);
+  }
 });
 
-// Delete a story by ID (only owner can delete)
+// Delete a story and its stored images (only the owner)
 router.delete("/:id", authMiddleware, async (req, res, next) => {
-    try {
-        const story = await Story.findById(req.params.id);
-        if (!story) {
-            logger.warn(`Story deletion failed - ID ${req.params.id} not found`);
-            return res.status(404).json({ error: "Story not found." });
-        }
+  try {
+    const story = await findOwnedStory(req, res);
+    if (!story) return;
 
-        if (story.userId.toString() !== req.user.id) {
-            logger.warn(`Unauthorized delete attempt by user ${req.user.id} on story ${req.params.id}`);
-            return res.status(403).json({ error: "Unauthorized to delete this story." });
-        }
+    await Promise.all(
+      story.content
+        .filter((section) => section.imagePath)
+        .map((section) =>
+          storage.deleteObject(section.imagePath).catch((error) => {
+            logger.error(`Could not delete image ${section.imagePath}: ${error.message}`);
+          }),
+        ),
+    );
 
-        await Story.findByIdAndDelete(req.params.id);
+    await Story.findByIdAndDelete(req.params.id);
+    await User.findByIdAndUpdate(req.user.id, {
+      $pull: { createdStories: story._id },
+    });
 
-        await User.findByIdAndUpdate(req.user.id, {
-            $pull: { createdStories: req.params.id },
-        });
-
-        logger.info(`Story deleted: ${req.params.id} by user ${req.user.id}`);
-        res.status(200).json({ message: "Story deleted successfully." });
-    } catch (error) {
-        next(error);
-    }
+    logger.info(`Story deleted: ${req.params.id} by user ${req.user.id}`);
+    res.status(200).json({ message: "Story deleted successfully." });
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;

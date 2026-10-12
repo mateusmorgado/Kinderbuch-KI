@@ -11,7 +11,7 @@ import Image from "next/image";
 // Login function outside the component
 const loginUser = async (userData) => {
   const response = await api.post("/login", {
-    email: userData.email,
+    username: userData.username,
     password: userData.password,
   });
 
@@ -25,21 +25,21 @@ const loginUser = async (userData) => {
 export default function Login() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
 
   const mutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {
-      console.log('Login response:', data)
       toast.success("Login erfolgreich! Sie werden weitergeleitet.");
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("token", data.accessToken); 
+        localStorage.setItem("token", data.accessToken);
         localStorage.setItem("user", JSON.stringify({
           name: data.displayName,
-          email: data.email,
+          displayName: data.displayName,
+          username: data.username,
           id: data.id,
         }));
       }
@@ -49,7 +49,11 @@ export default function Login() {
       }, 2000);
     },
     onError: (error) => {
-      toast.error(error.message || "Login fehlgeschlagen! Bitte überprüfen Sie Ihre Eingaben.");
+      toast.error(
+        error.response?.status === 401
+          ? "Benutzername oder Passwort ist falsch."
+          : error.message || "Login fehlgeschlagen! Bitte überprüfen Sie Ihre Eingaben."
+      );
     },
   });
 
@@ -87,14 +91,14 @@ export default function Login() {
         <div className="flex flex-col mt-10 ">
           <form onSubmit={handleSubmit} className="space-y-6">
             <InputField
-              label="Email address"
-              id="email"
-              type="email"
+              label="Benutzername"
+              id="username"
+              type="text"
               required
-              value={formData.email}
+              value={formData.username}
               onChange={handleChange}
-              autoComplete="email"
-              placeholder="Geben Sie Ihre E-Mail-Adresse ein"
+              autoComplete="username"
+              placeholder="Geben Sie Ihren Benutzernamen ein"
             />
 
             <div>
@@ -105,14 +109,6 @@ export default function Login() {
                 >
                   Passwort
                 </label>
-                <div className="text-sm">
-                  <a
-                    href="#"
-                    className="font-semibold text-indigo-600 hover:text-indigo-500"
-                  >
-                    Passwort vergessen?
-                  </a>
-                </div>
               </div>
               <div className="mt-2">
                 <InputField

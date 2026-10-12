@@ -11,9 +11,8 @@ import Image from "next/image";
 // Register function using Axios
 const registerUser = async (userData) => {
   const response = await api.post("/api/users", {
-    email: userData.email,
+    username: userData.username,
     password: userData.password,
-    displayName: userData.name,
   });
 
   return response.data;
@@ -22,8 +21,7 @@ const registerUser = async (userData) => {
 export default function Register() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    username: "",
     password: "",
   });
 
@@ -37,8 +35,9 @@ export default function Register() {
         localStorage.setItem("token", data.accessToken); // Store the access token
         localStorage.setItem("user", JSON.stringify({
           id: data.user.id,
+          name: data.user.displayName,
           displayName: data.user.displayName,
-          email: data.user.email,
+          username: data.user.username,
         })); // Store user details
       }
 
@@ -47,7 +46,11 @@ export default function Register() {
       }, 2000);
     },
     onError: (error) => {
-      toast.error(error.message || "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.");
+      toast.error(
+        error.response?.data?.error ||
+          error.message ||
+          "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
+      );
     },
   });
 
@@ -85,25 +88,14 @@ export default function Register() {
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             <InputField
-              label="Name"
-              id="name"
+              label="Benutzername"
+              id="username"
               type="text"
               required
-              value={formData.name}
+              value={formData.username}
               onChange={handleChange}
-              placeholder="Geben Sie Ihren Namen ein"
-              autoComplete="name"
-            />
-
-            <InputField
-              label="E-Mail-Adresse"
-              id="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Geben Sie Ihre E-Mail-Adresse ein"
-              autoComplete="email"
+              placeholder="Wähle einen Benutzernamen"
+              autoComplete="username"
             />
 
             <InputField

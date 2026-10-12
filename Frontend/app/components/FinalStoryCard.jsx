@@ -144,6 +144,7 @@ export default function FinalStoryCard({ story, onDelete }) {
                           alt={`Illustration for part ${index + 1}`}
                           width={400}
                           height={300}
+                          unoptimized
                           className="rounded-lg"
                         />
                       </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import toast from "react-hot-toast";
 import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { generateStoryImage } from "../api/generate/generate";
@@ -52,8 +53,19 @@ export default function StoryResultPage() {
 
     setIsGeneratingImage(true);
     try {
-      const data = await generateStoryImage({ paragraph: lastParagraph });
+      const data = await generateStoryImage({
+        paragraph: lastParagraph,
+        storyId: storyData.storyId,
+      });
       setStoryImage(data.image);
+
+      if (data.saved) {
+        toast.success("Bild wurde in deiner Bibliothek gespeichert.");
+      } else if (storyData.storyId) {
+        toast.error(
+          "Das Bild wurde erstellt, konnte aber nicht gespeichert werden.",
+        );
+      }
     } catch (error) {
       window.alert(error.message || "Bild konnte nicht erstellt werden!");
     } finally {
@@ -143,9 +155,26 @@ export default function StoryResultPage() {
             </div>
 
             <div className="mt-10 border-t border-black/10 pt-7 text-center">
-              <Button type="button" onClick={() => router.push("/generate")}>
-                Noch eine Geschichte
-              </Button>
+              {!storyData.storyId && (
+                <p className="mb-5 text-sm text-[#6d5b4d]">
+                  Melde dich an, damit deine Geschichten und Bilder in deiner
+                  Bibliothek gespeichert werden.
+                </p>
+              )}
+              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <Button type="button" onClick={() => router.push("/generate")}>
+                  Noch eine Geschichte
+                </Button>
+                {storyData.storyId && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => router.push("/mystories")}
+                  >
+                    Meine Geschichten
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </article>
