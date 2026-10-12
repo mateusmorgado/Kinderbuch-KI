@@ -36,10 +36,11 @@ app.use(
   })
 );
 
-// CORS middleware - allow all origins (use only in development)
+// CORS middleware - reflects the request origin (use only in development).
+// A literal "*" is rejected by browsers when credentials are enabled.
 app.use(
   cors({
-    origin: "*", //CHANGE THIS IN THE FUTURE
+    origin: true, //CHANGE THIS IN THE FUTURE: restrict to the frontend URL
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
