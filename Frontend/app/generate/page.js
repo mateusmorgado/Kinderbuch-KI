@@ -7,6 +7,7 @@ import Button from "../components/Button";
 import ExperienceControls, {
   useLanguagePreference,
 } from "../components/ExperienceControls";
+import FormScreen from "../components/FormScreen";
 import LoadingSpinner from "../components/LoadingSpinner";
 import {
   generateStory,
@@ -68,49 +69,33 @@ export default function GeneratePage() {
   };
 
   return (
-    <main className="min-h-screen overflow-y-auto px-4 pb-[max(6rem,env(safe-area-inset-bottom))] text-center">
+    <>
       {isGenerating && <LoadingSpinner />}
-      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4 pt-5 sm:pt-7">
-        <Button
-          type="button"
-          variant="tertiary"
-          className="px-0 text-base shadow-none"
-          onClick={() => router.push("/")}
-        >
-          <span aria-hidden="true">←</span> {isGerman ? "Startseite" : "Home"}
-        </Button>
-        <ExperienceControls />
-      </div>
-      <section className="mx-auto flex max-w-3xl flex-col items-center pt-10 sm:pt-16">
-        <h1 className="mb-4 text-5xl font-black">
-          {isGerman ? "Erstellen" : "Create"}
-        </h1>
-        <p className="mx-auto mb-8 max-w-xl text-xl">
-          {isGerman
+      <FormScreen
+        onSubmit={handleGenerate}
+        header={
+          <div className="flex items-center justify-between gap-4">
+            <Button
+              type="button"
+              variant="tertiary"
+              className="min-h-11 px-0 text-base text-white shadow-none [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]"
+              onClick={() => router.push("/")}
+            >
+              <span aria-hidden="true">←</span> {isGerman ? "Startseite" : "Home"}
+            </Button>
+            <ExperienceControls />
+          </div>
+        }
+        title={isGerman ? "Erstellen" : "Create"}
+        subtitle={
+          isGerman
             ? "Beschreibe deine Idee und Gemini schreibt daraus eine ganze Geschichte."
-            : "Describe your idea and Gemini will turn it into a complete story."}
-        </p>
-
-        <form onSubmit={handleGenerate} className="mx-auto max-w-2xl">
-          <label htmlFor="story-prompt" className="sr-only">
-            Deine Geschichtenidee
-          </label>
-          <textarea
-            id="story-prompt"
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            placeholder={
-              isGerman
-                ? "Zum Beispiel: Ein kleiner Fuchs findet im Wald eine Tür zu den Sternen ..."
-                : "For example: A little fox finds a door to the stars in the woods ..."
-            }
-            rows={5}
-            disabled={isGenerating}
-            className="w-full rounded-2xl border-2 border-black bg-white/90 p-4 text-left text-lg shadow-[0_4px_0_0_rgba(0,0,0,1)] outline-none focus:ring-4 focus:ring-orange-300 disabled:opacity-60"
-          />
+            : "Describe your idea and Gemini will turn it into a complete story."
+        }
+        actions={
           <Button
             type="submit"
-            className="mt-8 min-h-14 px-8 mb-8"
+            className="w-full max-w-xs py-4 font-black"
             disabled={isGenerating || !prompt.trim()}
           >
             {isGenerating
@@ -121,8 +106,25 @@ export default function GeneratePage() {
                 ? "Geschichte erstellen"
                 : "Create story"}
           </Button>
-        </form>
-      </section>
-    </main>
+        }
+      >
+        <label htmlFor="story-prompt" className="sr-only">
+          {isGerman ? "Deine Geschichtenidee" : "Your story idea"}
+        </label>
+        <textarea
+          id="story-prompt"
+          value={prompt}
+          onChange={(event) => setPrompt(event.target.value)}
+          placeholder={
+            isGerman
+              ? "Zum Beispiel: Ein kleiner Fuchs findet im Wald eine Tür zu den Sternen ..."
+              : "For example: A little fox finds a door to the stars in the woods ..."
+          }
+          rows={7}
+          disabled={isGenerating}
+          className="block min-h-48 w-full resize-none rounded-[1.7rem] border-2 border-black bg-white p-5 text-left text-lg text-gray-900 shadow-[0_4px_0_0_rgba(0,0,0,1)] outline-none placeholder:text-gray-500 focus:ring-4 focus:ring-orange-300 disabled:opacity-60"
+        />
+      </FormScreen>
+    </>
   );
 }
