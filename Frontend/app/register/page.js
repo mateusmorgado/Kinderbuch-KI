@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Button from "../components/Button";
 import InputField from "../components/InputField";
+import FormScreen, { FormLink } from "../components/FormScreen";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -11,9 +12,8 @@ import Image from "next/image";
 // Register function using Axios
 const registerUser = async (userData) => {
   const response = await api.post("/api/users", {
-    email: userData.email,
+    username: userData.username,
     password: userData.password,
-    displayName: userData.name,
   });
 
   return response.data;
@@ -22,8 +22,7 @@ const registerUser = async (userData) => {
 export default function Register() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    username: "",
     password: "",
   });
 
@@ -37,8 +36,9 @@ export default function Register() {
         localStorage.setItem("token", data.accessToken); // Store the access token
         localStorage.setItem("user", JSON.stringify({
           id: data.user.id,
+          name: data.user.displayName,
           displayName: data.user.displayName,
-          email: data.user.email,
+          username: data.user.username,
         })); // Store user details
       }
 
@@ -47,7 +47,11 @@ export default function Register() {
       }, 2000);
     },
     onError: (error) => {
-      toast.error(error.message || "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.");
+      toast.error(
+        error.response?.data?.error ||
+          error.message ||
+          "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
+      );
     },
   });
 
@@ -64,77 +68,59 @@ export default function Register() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <div className="fixed left-2 md:left-10 xl:left-25 bottom-0 block slide-in-bt">
-              <Image
-                src="/misc/dog.png"
-                alt="Dog illustration"
-                width={140}
-                height={400}
-                className="md:w-[220px] xl:w-[240px]"
-                priority
-              />
-            </div>
-      <div className="flex min-h-full flex-1 flex-col justify-top md:justify-center px-6 pt-2 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <h2 className="mt-10 text-center text-4xl font-black leading-9 tracking-tight">
-            Erstelle ein Konto
-          </h2>
+    <FormScreen
+      onSubmit={handleSubmit}
+      title="Erstelle ein Konto"
+      subtitle="Wähle einen Benutzernamen und ein Passwort."
+      decoration={
+        <div className="pointer-events-none fixed bottom-0 left-2 z-0 hidden md:left-10 md:block xl:left-25">
+          <Image
+            src="/misc/dog.png"
+            alt="Dog illustration"
+            width={140}
+            height={400}
+            className="md:w-[220px] xl:w-[240px]"
+            priority
+          />
         </div>
+      }
+      actions={
+        <Button
+          type="submit"
+          variant="secondary"
+          className="w-full max-w-xs py-4 font-black"
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? "Sie werden registriert..." : "Registrieren"}
+        </Button>
+      }
+      footer={
+        <>
+          Schon ein Konto? <FormLink href="/login">Hier anmelden</FormLink>
+        </>
+      }
+    >
+      <InputField
+        label="Benutzername"
+        id="username"
+        type="text"
+        required
+        value={formData.username}
+        onChange={handleChange}
+        placeholder="z. B. kleiner.fuchs"
+        autoComplete="username"
+      />
 
-        <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <InputField
-              label="Name"
-              id="name"
-              type="text"
-              required
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Geben Sie Ihren Namen ein"
-              autoComplete="name"
-            />
-
-            <InputField
-              label="E-Mail-Adresse"
-              id="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Geben Sie Ihre E-Mail-Adresse ein"
-              autoComplete="email"
-            />
-
-            <InputField
-              label="Passwort"
-              id="password"
-              type="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Geben Sie Ihr Passwort ein"
-              autoComplete="new-password"
-            />
-
-            <div className="font-black flex justify-center">
-              <Button className="min-w-60" type="submit" variant="secondary" disabled={mutation.isPending}>
-                {mutation.isPending ? "Sie werden registriert...": "Registrieren"}
-              </Button>
-            </div>
-          </form>
-
-          <p className="mt-10 text-center text-sm md:max-w-sm text-gray-500">
-            Sie haben schon ein Konto?{" "}
-            <a
-              href="/login"
-              className="font-semibold text-indigo-600 hover:text-indigo-500"
-            >
-              Melden Sie sich hier an
-            </a>
-          </p>
-        </div>
-      </div>
-    </div>
+      <InputField
+        label="Passwort"
+        id="password"
+        type="password"
+        required
+        value={formData.password}
+        onChange={handleChange}
+        placeholder="Mindestens 6 Zeichen"
+        autoComplete="new-password"
+      />
+    </FormScreen>
   );
 }

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Button from "../components/Button";
 import InputField from "../components/InputField";
+import FormScreen, { FormLink } from "../components/FormScreen";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -11,7 +12,7 @@ import Image from "next/image";
 // Login function outside the component
 const loginUser = async (userData) => {
   const response = await api.post("/login", {
-    email: userData.email,
+    username: userData.username,
     password: userData.password,
   });
 
@@ -25,21 +26,21 @@ const loginUser = async (userData) => {
 export default function Login() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
 
   const mutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {
-      console.log('Login response:', data)
       toast.success("Login erfolgreich! Sie werden weitergeleitet.");
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("token", data.accessToken); 
+        localStorage.setItem("token", data.accessToken);
         localStorage.setItem("user", JSON.stringify({
           name: data.displayName,
-          email: data.email,
+          displayName: data.displayName,
+          username: data.username,
           id: data.id,
         }));
       }
@@ -49,7 +50,11 @@ export default function Login() {
       }, 2000);
     },
     onError: (error) => {
-      toast.error(error.message || "Login fehlgeschlagen! Bitte überprüfen Sie Ihre Eingaben.");
+      toast.error(
+        error.response?.status === 401
+          ? "Benutzername oder Passwort ist falsch."
+          : error.message || "Login fehlgeschlagen! Bitte überprüfen Sie Ihre Eingaben."
+      );
     },
   });
 
@@ -66,90 +71,59 @@ export default function Login() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-top md:justify-center min-h-screen">
-      <div className="fixed left-2 md:left-10 xl:left-25 bottom-0 block">
-                    <Image
-                      src="/misc/dog.png"
-                      alt="Dog illustration"
-                      width={140}
-                      height={400}
-                      className="md:w-[220px] xl:w-[240px]"
-                      priority
-                    />
-                  </div>
-      <div className="flex px-6 lg:px-8 flex-col justify-center">
-        <div className="grid">
-          <h2 className="mt-10 mx-auto text-center text-4xl/9 font-bold tracking-tight max-w-[70%] sm:max-w-none ">
-            In Ihrem Konto anmelden.
-          </h2>
+    <FormScreen
+      onSubmit={handleSubmit}
+      title="Willkommen zurück"
+      subtitle="Melde dich an, um deine Geschichten zu sehen."
+      decoration={
+        <div className="pointer-events-none fixed bottom-0 left-2 z-0 hidden md:left-10 md:block xl:left-25">
+          <Image
+            src="/misc/dog.png"
+            alt="Dog illustration"
+            width={140}
+            height={400}
+            className="md:w-[220px] xl:w-[240px]"
+            priority
+          />
         </div>
+      }
+      actions={
+        <Button
+          type="submit"
+          variant="secondary"
+          className="w-full max-w-xs py-4 font-black"
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? "Anmeldung..." : "Anmelden"}
+        </Button>
+      }
+      footer={
+        <>
+          Noch kein Konto? <FormLink href="/register">Hier registrieren</FormLink>
+        </>
+      }
+    >
+      <InputField
+        label="Benutzername"
+        id="username"
+        type="text"
+        required
+        value={formData.username}
+        onChange={handleChange}
+        autoComplete="username"
+        placeholder="Dein Benutzername"
+      />
 
-        <div className="flex flex-col mt-10 ">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <InputField
-              label="Email address"
-              id="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              autoComplete="email"
-              placeholder="Geben Sie Ihre E-Mail-Adresse ein"
-            />
-
-            <div>
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="block text-sm/6 font-medium text-gray-900"
-                >
-                  Passwort
-                </label>
-                <div className="text-sm">
-                  <a
-                    href="#"
-                    className="font-semibold text-indigo-600 hover:text-indigo-500"
-                  >
-                    Passwort vergessen?
-                  </a>
-                </div>
-              </div>
-              <div className="mt-2">
-                <InputField
-                  label=""
-                  id="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  autoComplete="current-password"
-                  placeholder="Geben Sie Ihr Passwort ein"
-                />
-              </div>
-            </div>
-
-            <div className="font-black grid w-66 mx-auto">
-              <Button
-                type="submit"
-                variant="secondary"
-                disabled={mutation.isPending}
-              >
-                {mutation.isPending ? "Anmeldung..." : "Anmelden"}
-              </Button>
-            </div>
-          </form>
-
-          <p className="mt-10 text-center text-sm/6 text-gray-500">
-            Kein Nutzer?{" "}
-            <a
-              href="/register"
-              className="font-semibold text-indigo-600 hover:text-indigo-500"
-            >
-              Registriere dich hier
-            </a>
-          </p>
-        </div>
-      </div>
-    </div>
+      <InputField
+        label="Passwort"
+        id="password"
+        type="password"
+        required
+        value={formData.password}
+        onChange={handleChange}
+        autoComplete="current-password"
+        placeholder="Dein Passwort"
+      />
+    </FormScreen>
   );
 }

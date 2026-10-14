@@ -34,11 +34,11 @@ export default function Button({
 
   if (variant === "primary") {
     variantClasses =
-      "bg-[image:var(--peace)] ring-2 hover:filter hover:saturate-190 active:filter active:saturate-190 " +
+      "bg-[image:var(--peace)] text-[#2c2c2c] ring-2 hover:filter hover:saturate-190 active:filter active:saturate-190 " +
       "transition ease-in-out duration-250 hover-glitter active:scale-95";
   } else if (variant === "secondary") {
     variantClasses =
-      "bg-[image:var(--curiosity)] ring-2 hover:filter hover:saturate-190 active:filter active:saturate-190 " +
+      "bg-[image:var(--curiosity)] text-[#2c2c2c] ring-2 hover:filter hover:saturate-190 active:filter active:saturate-190 " +
       "transition ease-in-out duration-250 hover-glitter active:scale-95";
   } else if (variant === "tertiary") {
     variantClasses =
@@ -51,7 +51,7 @@ export default function Button({
       "transition-all duration-300 ease-out hover-sparkle";
   } else if (variant === "quaternary") {
     variantClasses =
-      "bg-[image:var(--calm)] ring-2 hover:filter hover:saturate-190 active:filter active:saturate-190 " +
+      "bg-[image:var(--calm)] text-[#2c2c2c] ring-2 hover:filter hover:saturate-190 active:filter active:saturate-190 " +
       "transition ease-in-out duration-250 hover-glitter active:scale-95";
   } else if (variant === "glow") {
     variantClasses =

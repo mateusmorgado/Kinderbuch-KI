@@ -10,25 +10,26 @@ export default function InputField({
 }) {
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="block text-sm font-medium leading-6 text-gray-900"
-      >
-        {label}
-      </label>
-      <div className="mt-2">
-        <input
-          id={id}
-          name={id}
-          type={type}
-          required={required}
-          value={value}
-          onChange={onChange}
-          autoComplete={autoComplete}
-          placeholder={placeholder}
-          className="block w-full rounded-[1.7rem] bg-white px-3 py-1.5 text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm sm:leading-6"
-        />
-      </div>
+      {label && (
+        <label
+          htmlFor={id}
+          className="mb-2 block px-2 text-sm font-medium leading-6"
+        >
+          {label}
+        </label>
+      )}
+      <input
+        id={id}
+        name={id}
+        type={type}
+        required={required}
+        value={value}
+        onChange={onChange}
+        autoComplete={autoComplete}
+        autoCapitalize={type === "text" ? "none" : undefined}
+        placeholder={placeholder}
+        className="block min-h-14 w-full rounded-[1.7rem] border-2 border-black/10 bg-white px-5 py-3 text-base text-gray-900 shadow-[0_4px_0_0_rgba(0,0,0,0.9)] outline-none placeholder:text-gray-500 focus:ring-4 focus:ring-orange-300 night:border-white/25 night:bg-white/10 night:text-white night:shadow-[0_4px_0_0_rgba(0,0,0,0.7)] night:backdrop-blur-md night:placeholder:text-white/55"
+      />
     </div>
   );
 }

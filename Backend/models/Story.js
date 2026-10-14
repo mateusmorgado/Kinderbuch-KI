@@ -11,6 +11,11 @@ const StorySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // The idea the user typed in to generate the story.
+    prompt: {
+      type: String,
+      default: '',
+    },
     content: [
       {
         id: {
@@ -21,7 +26,14 @@ const StorySchema = new mongoose.Schema(
           type: String,
           required: true,
         },
+        // Legacy/external image URL. Images stored in Google Cloud Storage
+        // use `imagePath` instead and are exposed as a signed URL in `image`.
         image: {
+          type: String,
+          default: '',
+        },
+        // Object name inside the Google Cloud Storage bucket.
+        imagePath: {
           type: String,
           default: '',
         },

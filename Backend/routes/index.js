@@ -14,38 +14,32 @@ router.get("/", (req, res) => {
 // Login Route
 router.post("/login", async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    // Check if email and password are provided
-    if (!email || !password) {
+    // Check if username and password are provided
+    if (!username || !password) {
       return res
         .status(400)
-        .json({ error: "Email and password are required." });
+        .json({ error: "Username and password are required." });
     }
 
-    // Sanitize email
-    const sanitizedEmail = email.trim().toLowerCase();
-
-    // Validate email format
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(sanitizedEmail)) {
-      return res.status(400).json({ error: "Invalid email format." });
-    }
+    // Sanitize username
+    const sanitizedUsername = String(username).trim().toLowerCase();
 
     // Find user
-    const user = await User.findOne({ email: sanitizedEmail }).lean();
+    const user = await User.findOne({ username: sanitizedUsername }).lean();
     if (!user) {
-      return res.status(401).json({ error: "Invalid email or password." });
+      return res.status(401).json({ error: "Invalid username or password." });
     }
 
     // Validate password
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(String(password), user.passwordHash);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: "Invalid email or password." });
+      return res.status(401).json({ error: "Invalid username or password." });
     }
 
     // Generate JWT tokens
-    const payload = { id: user._id, name: user.displayName, email: user.email };
+    const payload = { id: user._id, name: user.displayName, username: user.username };
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "5d",
     });
@@ -57,27 +51,28 @@ router.post("/login", async (req, res, next) => {
 
     logger.info(`User ${user.displayName} logged in`);
 
-    // Set secure cookie with refresh token
+    // Set secure cookies with the refresh token and basic user data
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    };
+    res.cookie("refreshToken", refreshToken, cookieOptions);
     res.cookie(
       "auth",
       JSON.stringify({
-        refreshToken,
-        email: user.email,
+        username: user.username,
         displayName: user.displayName,
         id: user._id,
       }),
-      {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-      },
+      cookieOptions,
     );
 
     res.json({
       accessToken,
       displayName: user.displayName,
-      email: user.email,
+      username: user.username,
       id: user._id,
     });
   } catch (error) {
@@ -102,7 +97,8 @@ router.post("/logout", async (req, res, next) => {
     }
 
     // Clear refresh token cookie
-    res.clearCookie("refreshToken", { path: "/api/auth/refresh-token" });
+    res.clearCookie("refreshToken", { path: "/" });
+    res.clearCookie("auth", { path: "/" });
     res.json({ message: "Logged out successfully" });
   } catch (error) {
     next(error);
