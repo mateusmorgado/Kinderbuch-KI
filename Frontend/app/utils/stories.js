@@ -1,4 +1,9 @@
-import { clearSession, getToken, isAuthError } from "./auth";
+import {
+  clearSession,
+  getToken,
+  handleExpiredSession,
+  isAuthError,
+} from "./auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -12,18 +17,58 @@ export function isLoggedIn() {
   return Object.keys(authHeaders()).length > 0;
 }
 
-export async function generateStory({ prompt }) {
-  const res = await fetch(`${API_BASE_URL}/api/contents/generate`, {
+// Writes a story and calls onText with each new piece as Gemini writes it.
+// Resolves with the whole story; rejects with a readable Error.
+export async function streamStory({ prompt, onText, signal }) {
+  const res = await fetch(`${API_BASE_URL}/api/contents/generate-stream`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders(),
     },
     body: JSON.stringify({ prompt }),
+    signal,
   });
-  const data = await res.json();
-  if (!res.ok)
+
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => ({}));
     throw new Error(data.error || "Geschichte konnte nicht generiert werden!");
-  return data;
+  }
+
+  // The answer is newline-delimited JSON: text pieces, then done or error.
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let story = "";
+  let finished = false;
+
+  const handleLine = (line) => {
+    if (!line.trim()) return;
+    const event = JSON.parse(line);
+    if (event.type === "text") {
+      story += event.text;
+      onText?.(story);
+    } else if (event.type === "error") {
+      throw new Error(event.error);
+    } else if (event.type === "done") {
+      finished = true;
+    }
+  };
+
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop();
+    lines.forEach(handleLine);
+  }
+  handleLine(buffer + decoder.decode());
+
+  if (!finished) {
+    throw new Error("Die Verbindung wurde unterbrochen. Bitte versuche es erneut.");
+  }
+  return story.trim();
 }
 
 // Saves a generated story to the logged-in user's library.
@@ -61,4 +106,20 @@ export async function generateStoryImage({ paragraph, storyId }) {
     throw new Error(data.error || "Bild konnte nicht erstellt werden!");
   }
   return data;
+}
+
+// Deletes one of the user's stories. An expired login goes back to /login.
+export async function deleteStory(storyId) {
+  const res = await fetch(`${API_BASE_URL}/api/stories/${storyId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (isAuthError(res.status)) {
+    handleExpiredSession();
+    throw new Error("Sitzung abgelaufen, bitte erneut einloggen.");
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Geschichte konnte nicht gelöscht werden!");
+  }
 }

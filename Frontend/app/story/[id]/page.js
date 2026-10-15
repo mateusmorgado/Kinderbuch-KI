@@ -7,6 +7,7 @@ import LoadingSpGeneric from "../../components/LoadingSpGeneric";
 import Button from "../../components/Button";
 import FinalStoryCard from "../../components/FinalStoryCard";
 import { getToken, handleExpiredSession, isAuthError } from "../../utils/auth";
+import { deleteStory } from "../../utils/stories";
 import ExperienceControls, {
   useLanguagePreference,
 } from "../../components/ExperienceControls";
@@ -74,28 +75,7 @@ export default function StoryDetail() {
   // Resolves to true when the story is gone, so the dialog can close.
   const handleDelete = async () => {
     try {
-      const token = getToken();
-      if (!token) {
-        handleExpiredSession();
-        return false;
-      }
-      const response = await fetch(`${API_BASE_URL}/api/stories/${story._id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (isAuthError(response.status)) {
-        handleExpiredSession();
-        return false;
-      }
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete story");
-      }
-
+      await deleteStory(story._id);
       toast.success(t.deleted);
       router.push("/mystories");
       return true;

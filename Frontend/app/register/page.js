@@ -3,6 +3,9 @@ import { useState } from "react";
 import Button from "../components/Button";
 import InputField from "../components/InputField";
 import FormScreen, { FormLink } from "../components/FormScreen";
+import ExperienceControls, {
+  useLanguagePreference,
+} from "../components/ExperienceControls";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -10,41 +13,62 @@ import api from "../utils/api";
 import { saveSession } from "../utils/auth";
 import Image from "next/image";
 
-// Register function using Axios
-const registerUser = async (userData) => {
-  const response = await api.post("/api/users", {
-    username: userData.username,
-    password: userData.password,
-  });
+const TEXT = {
+  de: {
+    home: "Startseite",
+    title: "Erstelle ein Konto",
+    subtitle: "Wähle einen Benutzernamen und ein Passwort.",
+    username: "Benutzername",
+    usernamePlaceholder: "z. B. kleiner.fuchs",
+    password: "Passwort",
+    passwordPlaceholder: "Mindestens 6 Zeichen",
+    submit: "Registrieren",
+    submitting: "Konto wird erstellt ...",
+    success: "Willkommen bei MellowDreams!",
+    failed: "Registrierung fehlgeschlagen. Bitte versuche es erneut.",
+    switchText: "Schon ein Konto?",
+    switchLink: "Hier anmelden",
+  },
+  en: {
+    home: "Home",
+    title: "Create an account",
+    subtitle: "Pick a username and a password.",
+    username: "Username",
+    usernamePlaceholder: "e.g. little.fox",
+    password: "Password",
+    passwordPlaceholder: "At least 6 characters",
+    submit: "Sign up",
+    submitting: "Creating your account ...",
+    success: "Welcome to MellowDreams!",
+    failed: "Sign-up failed. Please try again.",
+    switchText: "Already have an account?",
+    switchLink: "Log in here",
+  },
+};
 
+const registerUser = async ({ username, password }) => {
+  const response = await api.post("/api/users", { username, password });
   return response.data;
 };
 
 export default function Register() {
   const router = useRouter();
+  const [language] = useLanguagePreference();
+  const t = TEXT[language] || TEXT.de;
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
 
-  // Define the mutation
   const mutation = useMutation({
     mutationFn: registerUser,
     onSuccess: (data) => {
-      toast.success("Registrierung erfolgreich. Sie werden weitergeleitet.");
-
       saveSession(data.accessToken, data.user);
-
-      setTimeout(() => {
-        router.push("/dashboard"); // Redirect to dashboard after successful registration
-      }, 2000);
+      toast.success(t.success);
+      router.push("/dashboard");
     },
     onError: (error) => {
-      toast.error(
-        error.response?.data?.error ||
-          error.message ||
-          "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
-      );
+      toast.error(error.response?.data?.error || t.failed);
     },
   });
 
@@ -55,7 +79,7 @@ export default function Register() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     mutation.mutate(formData);
   };
@@ -63,13 +87,26 @@ export default function Register() {
   return (
     <FormScreen
       onSubmit={handleSubmit}
-      title="Erstelle ein Konto"
-      subtitle="Wähle einen Benutzernamen und ein Passwort."
+      header={
+        <div className="flex items-center justify-between gap-4">
+          <Button
+            type="button"
+            variant="tertiary"
+            className="min-h-11 px-0 text-base shadow-none"
+            onClick={() => router.push("/")}
+          >
+            <span aria-hidden="true">←</span> {t.home}
+          </Button>
+          <ExperienceControls />
+        </div>
+      }
+      title={t.title}
+      subtitle={t.subtitle}
       decoration={
         <div className="pointer-events-none fixed bottom-0 left-2 z-0 hidden md:left-10 md:block xl:left-25">
           <Image
             src="/misc/dog.png"
-            alt="Dog illustration"
+            alt=""
             width={140}
             height={400}
             className="md:w-[220px] xl:w-[240px]"
@@ -84,35 +121,35 @@ export default function Register() {
           className="w-full max-w-xs py-4 font-black"
           disabled={mutation.isPending}
         >
-          {mutation.isPending ? "Sie werden registriert..." : "Registrieren"}
+          {mutation.isPending ? t.submitting : t.submit}
         </Button>
       }
       footer={
         <>
-          Schon ein Konto? <FormLink href="/login">Hier anmelden</FormLink>
+          {t.switchText} <FormLink href="/login">{t.switchLink}</FormLink>
         </>
       }
     >
       <InputField
-        label="Benutzername"
+        label={t.username}
         id="username"
         type="text"
         required
         value={formData.username}
         onChange={handleChange}
-        placeholder="z. B. kleiner.fuchs"
         autoComplete="username"
+        placeholder={t.usernamePlaceholder}
       />
 
       <InputField
-        label="Passwort"
+        label={t.password}
         id="password"
         type="password"
         required
         value={formData.password}
         onChange={handleChange}
-        placeholder="Mindestens 6 Zeichen"
         autoComplete="new-password"
+        placeholder={t.passwordPlaceholder}
       />
     </FormScreen>
   );

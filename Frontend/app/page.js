@@ -40,7 +40,7 @@ export default function Home() {
       <div className="fixed -right-9 -bottom-5 md:-bottom-1 md:right-15 block slide-in-bt">
         <Image
           src="/misc/girl-mag.png"
-          alt="Girl illustration"
+          alt=""
           width={120}
           height={400}
           className="md:w-[160px] xl:w-[180px]"
@@ -50,7 +50,7 @@ export default function Home() {
       <div className="fixed left-0 top-1/3 md:top-1/2 -translate-y-1/2 block slide-in-lr">
         <Image
           src="/kids/boy-peek.png"
-          alt="Kids illustration"
+          alt=""
           width={100}
           height={400}
           className=" md:w-[140px] xl:w-[160px] "
@@ -59,7 +59,7 @@ export default function Home() {
       <div className="fixed -right-15 top-1/3 md:top-1/4 -translate-y-1/2 block slide-in-rl">
         <Image
           src="/misc/lion-mag.png"
-          alt="Dragon illustration"
+          alt=""
           width={180}
           height={220}
           className=" md:w-[260px] xl:w-[280px]"
@@ -69,7 +69,7 @@ export default function Home() {
         <div className="w-full sm:px-0">
           <Image
             src="/mellow.svg"
-            alt="Header illustration"
+            alt="MellowDreams"
             width={420}
             height={200}
             priority

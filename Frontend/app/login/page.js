@@ -3,6 +3,9 @@ import { useState } from "react";
 import Button from "../components/Button";
 import InputField from "../components/InputField";
 import FormScreen, { FormLink } from "../components/FormScreen";
+import ExperienceControls, {
+  useLanguagePreference,
+} from "../components/ExperienceControls";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -10,22 +13,50 @@ import api from "../utils/api";
 import { saveSession } from "../utils/auth";
 import Image from "next/image";
 
-// Login function outside the component
-const loginUser = async (userData) => {
-  const response = await api.post("/login", {
-    username: userData.username,
-    password: userData.password,
-  });
+const TEXT = {
+  de: {
+    home: "Startseite",
+    title: "Willkommen zurück",
+    subtitle: "Melde dich an, um deine Geschichten zu sehen.",
+    username: "Benutzername",
+    usernamePlaceholder: "Dein Benutzername",
+    password: "Passwort",
+    passwordPlaceholder: "Dein Passwort",
+    submit: "Anmelden",
+    submitting: "Anmeldung ...",
+    success: "Willkommen zurück!",
+    wrongLogin: "Benutzername oder Passwort ist falsch.",
+    failed: "Login fehlgeschlagen. Bitte versuche es erneut.",
+    switchText: "Noch kein Konto?",
+    switchLink: "Hier registrieren",
+  },
+  en: {
+    home: "Home",
+    title: "Welcome back",
+    subtitle: "Log in to see your stories.",
+    username: "Username",
+    usernamePlaceholder: "Your username",
+    password: "Password",
+    passwordPlaceholder: "Your password",
+    submit: "Log in",
+    submitting: "Logging in ...",
+    success: "Welcome back!",
+    wrongLogin: "Wrong username or password.",
+    failed: "Login failed. Please try again.",
+    switchText: "No account yet?",
+    switchLink: "Sign up here",
+  },
+};
 
-  if (!response.data) {
-    throw new Error("Login fehlgeschlagen!");
-  }
-
+const loginUser = async ({ username, password }) => {
+  const response = await api.post("/login", { username, password });
   return response.data;
 };
 
 export default function Login() {
   const router = useRouter();
+  const [language] = useLanguagePreference();
+  const t = TEXT[language] || TEXT.de;
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -34,47 +65,52 @@ export default function Login() {
   const mutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {
-      toast.success("Login erfolgreich! Sie werden weitergeleitet.");
-
       saveSession(data.accessToken, data);
-
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 2000);
+      toast.success(t.success);
+      router.push("/dashboard");
     },
     onError: (error) => {
-      toast.error(
-        error.response?.status === 401
-          ? "Benutzername oder Passwort ist falsch."
-          : error.response?.data?.error ||
-            error.message ||
-            "Login fehlgeschlagen! Bitte überprüfen Sie Ihre Eingaben."
-      );
+      toast.error(error.response?.status === 401
+          ? t.wrongLogin
+          : error.response?.data?.error || t.failed);
     },
   });
 
-  function handleChange(e) {
-    setFormData({
-      ...formData,
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
       [e.target.id]: e.target.value,
-    });
-  }
+    }));
+  };
 
-  function handleSubmit(e) {
+  const handleSubmit = (e) => {
     e.preventDefault();
     mutation.mutate(formData);
-  }
+  };
 
   return (
     <FormScreen
       onSubmit={handleSubmit}
-      title="Willkommen zurück"
-      subtitle="Melde dich an, um deine Geschichten zu sehen."
+      header={
+        <div className="flex items-center justify-between gap-4">
+          <Button
+            type="button"
+            variant="tertiary"
+            className="min-h-11 px-0 text-base shadow-none"
+            onClick={() => router.push("/")}
+          >
+            <span aria-hidden="true">←</span> {t.home}
+          </Button>
+          <ExperienceControls />
+        </div>
+      }
+      title={t.title}
+      subtitle={t.subtitle}
       decoration={
         <div className="pointer-events-none fixed bottom-0 left-2 z-0 hidden md:left-10 md:block xl:left-25">
           <Image
             src="/misc/dog.png"
-            alt="Dog illustration"
+            alt=""
             width={140}
             height={400}
             className="md:w-[220px] xl:w-[240px]"
@@ -89,35 +125,35 @@ export default function Login() {
           className="w-full max-w-xs py-4 font-black"
           disabled={mutation.isPending}
         >
-          {mutation.isPending ? "Anmeldung..." : "Anmelden"}
+          {mutation.isPending ? t.submitting : t.submit}
         </Button>
       }
       footer={
         <>
-          Noch kein Konto? <FormLink href="/register">Hier registrieren</FormLink>
+          {t.switchText} <FormLink href="/register">{t.switchLink}</FormLink>
         </>
       }
     >
       <InputField
-        label="Benutzername"
+        label={t.username}
         id="username"
         type="text"
         required
         value={formData.username}
         onChange={handleChange}
         autoComplete="username"
-        placeholder="Dein Benutzername"
+        placeholder={t.usernamePlaceholder}
       />
 
       <InputField
-        label="Passwort"
+        label={t.password}
         id="password"
         type="password"
         required
         value={formData.password}
         onChange={handleChange}
         autoComplete="current-password"
-        placeholder="Dein Passwort"
+        placeholder={t.passwordPlaceholder}
       />
     </FormScreen>
   );

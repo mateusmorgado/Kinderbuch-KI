@@ -66,7 +66,7 @@ export default function Dashboard() {
       <div className="w-full px-4 py-6 sm:px-0">
         <Image
           src="/mellow.svg"
-          alt="Header illustration"
+          alt="MellowDreams"
           width={350}
           height={200}
           priority
@@ -102,7 +102,7 @@ export default function Dashboard() {
       <div className="fixed right-0 bottom-3/5 md:bottom-1/5 block slide-in-rl">
         <Image
           src="/kids/girl.png"
-          alt="Kids illustration"
+          alt=""
           width={100}
           height={400}
           className="md:w-[160px] xl:w-[180px]"
@@ -112,7 +112,7 @@ export default function Dashboard() {
       <div className="fixed -left-5 top-1/5 md:top-2/7 xl:top-2/5 block slide-in-lr">
         <Image
           src="/misc/boy-mag.png"
-          alt="Boy with magnifying glass"
+          alt=""
           width={100}
           height={400}
           className="md:w-[160px] xl:w-[180px]"

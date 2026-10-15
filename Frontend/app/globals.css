@@ -104,3 +104,89 @@ html[data-theme="night"] .site-background {
     0 0 0 5px red,
     0 0 0 4px red;
 }
+
+/* Story prompt: a slowly flowing rainbow frame in the app's gradient colours. */
+.magic-frame {
+  background: linear-gradient(
+    110deg,
+    #f7c898,
+    #f8ceee,
+    #9c8cfa,
+    #a4eaef,
+    #fca43c,
+    #f7c898
+  );
+  background-size: 300% 300%;
+  animation: gradientFlow 9s ease infinite;
+}
+
+.magic-frame:focus-within {
+  box-shadow:
+    0 0 0 4px rgba(249, 168, 212, 0.35),
+    0 0 32px rgba(156, 140, 250, 0.45),
+    0 4px 0 0 rgba(0, 0, 0, 1);
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.7) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(20deg);
+  }
+}
+
+.twinkle {
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+
+/* Blinking quill cursor while a story is being written. */
+@keyframes quill {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.quill-cursor {
+  animation: quill 1s ease-in-out infinite;
+}
+
+/* New words fade in as the story streams. */
+@keyframes inkIn {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.ink-in {
+  animation: inkIn 0.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magic-frame,
+  .twinkle,
+  .quill-cursor,
+  .ink-in,
+  .slide-in-lr,
+  .slide-in-rl,
+  .slide-in-bt {
+    animation: none;
+  }
+
+  .slide-in-rl,
+  .slide-in-bt {
+    opacity: 1;
+  }
+}
