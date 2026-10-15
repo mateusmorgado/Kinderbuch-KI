@@ -24,14 +24,6 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
     kidsNames: {
       type: [String],
       default: [],

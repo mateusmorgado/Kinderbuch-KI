@@ -6,6 +6,7 @@ const { logger } = require("../../middleware/logging");
 const Story = require("../../models/Story");
 const User = require("../../models/User");
 const storage = require("../../services/storage");
+const { deleteStoryWithImages } = require("../../services/stories");
 
 const MAX_TITLE_LENGTH = 120;
 const MAX_TEXT_LENGTH = 20000;
@@ -157,7 +158,6 @@ router.put("/:id", authMiddleware, async (req, res, next) => {
     }
 
     story.title = req.body.title.trim().slice(0, MAX_TITLE_LENGTH);
-    story.updatedAt = Date.now();
     await story.save();
 
     logger.info(`Story updated: ${req.params.id} by user ${req.user.id}`);
@@ -173,20 +173,7 @@ router.delete("/:id", authMiddleware, async (req, res, next) => {
     const story = await findOwnedStory(req, res);
     if (!story) return;
 
-    await Promise.all(
-      story.content
-        .filter((section) => section.imagePath)
-        .map((section) =>
-          storage.deleteImage(section.imagePath).catch((error) => {
-            logger.error(`Could not delete image ${section.imagePath}: ${error.message}`);
-          }),
-        ),
-    );
-    await storage.deleteStoryImages(story._id).catch((error) => {
-      logger.error(`Could not delete images of story ${story._id}: ${error.message}`);
-    });
-
-    await Story.findByIdAndDelete(req.params.id);
+    await deleteStoryWithImages(story);
     await User.findByIdAndUpdate(req.user.id, {
       $pull: { createdStories: story._id },
     });

@@ -11,14 +11,11 @@ app.get("/protected", (req, res) => res.json({ user: req.user }));
 jest.mock("jsonwebtoken");
 
 describe("authMiddleware", () => {
-  const SECRET = "testsecret"; // Mock secret key
-  process.env.SECRET = SECRET;
-
   it("should return 401 if no Authorization header is provided", async () => {
     const res = await request(app).get("/protected");
     expect(res.status).toBe(401);
     expect(res.body).toEqual({
-      message: "Authorization header must start with 'Bearer '",
+      message: "Unauthorized - No token provided",
     });
   });
 
@@ -28,7 +25,7 @@ describe("authMiddleware", () => {
       .set("Authorization", "InvalidToken");
     expect(res.status).toBe(401);
     expect(res.body).toEqual({
-      message: "Authorization header must start with 'Bearer '",
+      message: "Unauthorized - No token provided",
     });
   });
 
@@ -42,7 +39,7 @@ describe("authMiddleware", () => {
       .set("Authorization", "Bearer invalidtoken");
 
     expect(res.status).toBe(403);
-    expect(res.body).toEqual({ message: "Token is invalid" });
+    expect(res.body).toEqual({ message: "Forbidden - Invalid or expired token" });
   });
 
   it("should call next() and attach user to req if token is valid", async () => {

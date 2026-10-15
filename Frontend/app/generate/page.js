@@ -13,7 +13,7 @@ import {
   generateStory,
   isLoggedIn,
   saveStory,
-} from "../api/generate/generate";
+} from "../utils/stories";
 
 const subscribeToNothing = () => () => {};
 

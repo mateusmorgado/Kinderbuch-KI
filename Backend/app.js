@@ -57,14 +57,16 @@ app.use("/api/contents", contentRoutes);
 app.use("/api/prompts", promptRoutes);
 app.use("/api/images", imageRoutes);
 
-// Connect Database
-connectDB();
-
 // Use error logging/handling middleware
 app.use(errorLogger); // Log errors
 app.use(errorHandler); // Handle errors
 
-const port = process.env.PORT || 8082;
-app.listen(port, () => logger.info(`Server running on port ${port}`));
+// Start the server only when run directly (`node app.js`), so tests can
+// import the app without a database or an open port.
+if (require.main === module) {
+  connectDB();
+  const port = process.env.PORT || 8082;
+  app.listen(port, () => logger.info(`Server running on port ${port}`));
+}
 
-module.exports = logger;
+module.exports = app;

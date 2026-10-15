@@ -6,7 +6,7 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { generateStoryImage } from "../api/generate/generate";
+import { generateStoryImage } from "../utils/stories";
 
 export default function StoryResultPage() {
   const router = useRouter();

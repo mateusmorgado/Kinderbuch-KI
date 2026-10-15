@@ -3,6 +3,8 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
+const Story = require("../../models/Story");
+const { deleteStoryWithImages } = require("../../services/stories");
 const { USERNAME_REGEX } = User;
 const authMiddleware = require("../../middleware/authMiddleware");
 const { logger } = require("../../middleware/logging");
@@ -122,7 +124,7 @@ router.post("/", registerLimiter, async (req, res, next) => {
 // Update the display name / kids' names of your own account
 router.put("/:id", authMiddleware, ownAccountOnly, async (req, res, next) => {
     try {
-        const updates = { updatedAt: Date.now() };
+        const updates = {};
         if (typeof req.body.displayName === "string") {
             updates.displayName = req.body.displayName.trim().slice(0, 60);
         }
@@ -150,9 +152,14 @@ router.put("/:id", authMiddleware, ownAccountOnly, async (req, res, next) => {
     }
 });
 
-// Delete your own account
+// Delete your own account, with all of its stories and images
 router.delete("/:id", authMiddleware, ownAccountOnly, async (req, res, next) => {
     try {
+        const stories = await Story.find({ userId: req.params.id });
+        for (const story of stories) {
+            await deleteStoryWithImages(story);
+        }
+
         const deletedUser = await User.findByIdAndDelete(req.params.id);
 
         if (!deletedUser) {
