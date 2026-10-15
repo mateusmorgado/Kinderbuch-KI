@@ -47,6 +47,9 @@ describe("Prompt Model Test", () => {
   });
 
   it("should enforce unique constraints on title and prompt", async () => {
+    // Wait for the unique indexes; MongoDB builds them in the background.
+    await Prompt.init();
+
     const prompt1 = new Prompt({
       title: "Unique Test",
       prompt: "This must be unique",
