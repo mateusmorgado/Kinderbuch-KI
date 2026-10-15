@@ -2,6 +2,7 @@ import "./globals.css";
 import LocalFont from "next/font/local";
 import Providers from "./providers";
 import { Toaster } from "react-hot-toast";
+import { Analytics } from "@vercel/analytics/next";
 
 //the fonts need to be fixed. in the html, Roca2 should be passed as variable and not as a className so all the weights are added can be used. somehow only the regular weight is being able to be used (the first one in the array)
 
@@ -37,6 +38,7 @@ export default function RootLayout({ children }) {
           <Providers>{children}</Providers>
         </main>
         <Toaster position="top-center" />
+        <Analytics />
       </body>
     </html>
   );
