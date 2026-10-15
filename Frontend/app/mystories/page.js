@@ -5,6 +5,7 @@ import Image from "next/image";
 import StoryCard from "../components/StoryCard";
 import Button from "../components/Button";
 import LoadingSpGeneric from "../components/LoadingSpinner";
+import { getToken, getUser, handleExpiredSession, isAuthError } from "../utils/auth";
 
 export default function MyStories() {
   const router = useRouter();
@@ -18,9 +19,8 @@ export default function MyStories() {
 
   useEffect(() => {
     const checkAuthAndLoadStories = async () => {
-      const token = localStorage.getItem("token");
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const userId = user.id;
+      const token = getToken();
+      const userId = getUser()?.id;
 
       if (!token) {
         router.push("/");
@@ -38,6 +38,10 @@ export default function MyStories() {
           }
         );
 
+        if (isAuthError(response.status)) {
+          handleExpiredSession();
+          return;
+        }
         if (!response.ok) {
           throw new Error("Failed to fetch stories");
         }

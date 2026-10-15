@@ -1,9 +1,10 @@
+import { clearSession, getToken, isAuthError } from "../../utils/auth";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Returns the Authorization header for the logged-in user (or nothing).
 function authHeaders() {
-  if (typeof window === "undefined") return {};
-  const token = localStorage.getItem("token");
+  const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -37,6 +38,8 @@ export async function saveStory({ prompt, text }) {
   });
   const data = await res.json();
   if (!res.ok) {
+    // The login has expired: the story is still shown, just not saved.
+    if (isAuthError(res.status)) clearSession();
     throw new Error(data.error || "Geschichte konnte nicht gespeichert werden!");
   }
   return data;

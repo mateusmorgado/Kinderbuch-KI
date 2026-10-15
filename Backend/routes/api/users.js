@@ -2,12 +2,12 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
 const { USERNAME_REGEX } = User;
-const RefreshToken = require("../../models/RefreshToken");
 const authMiddleware = require("../../middleware/authMiddleware");
 const { logger } = require("../../middleware/logging");
+const { registerLimiter } = require("../../middleware/rateLimit");
+const { issueAccessToken } = require("../../services/tokens");
 
 const MIN_PASSWORD_LENGTH = 6;
 const MAX_PASSWORD_LENGTH = 72; // bcrypt ignores everything after 72 bytes
@@ -57,7 +57,7 @@ router.get("/:id", authMiddleware, ownAccountOnly, async (req, res, next) => {
 });
 
 // Create a new user (username + password)
-router.post("/", async (req, res, next) => {
+router.post("/", registerLimiter, async (req, res, next) => {
     try {
         const { username, password } = req.body;
 
@@ -101,28 +101,7 @@ router.post("/", async (req, res, next) => {
 
         logger.info(`New user created: ${sanitizedUsername}`);
 
-        // Generate tokens
-        const payload = { id: newUser._id, name: newUser.displayName, username: newUser.username };
-        const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "5d" });
-        const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
-
-        // Save refresh token to DB
-        await RefreshToken.create({ token: refreshToken, userId: newUser._id });
-
-        // Set cookies with refresh token and user data
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            path: "/",
-        });
-
-        res.cookie("auth", JSON.stringify({ id: newUser._id, displayName: newUser.displayName, username: newUser.username }), {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            path: "/",
-        });
+        const accessToken = issueAccessToken(newUser);
 
         res.status(201).json({
             message: "User registered successfully",
@@ -180,8 +159,6 @@ router.delete("/:id", authMiddleware, ownAccountOnly, async (req, res, next) => 
             logger.warn(`User deletion failed - ID ${req.params.id} not found`);
             return res.status(404).json({ error: "User not found." });
         }
-
-        await RefreshToken.deleteMany({ userId: deletedUser._id });
 
         logger.info(`User deleted: ${req.params.id}`);
         res.status(200).json({ message: "User deleted successfully." });

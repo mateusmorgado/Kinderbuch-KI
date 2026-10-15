@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
 const optionalAuth = require("../../middleware/optionalAuth");
+const { storyLimiter, imageLimiter } = require("../../middleware/rateLimit");
 const { logger } = require("../../middleware/logging");
 const Story = require("../../models/Story");
 const storage = require("../../services/storage");
@@ -59,7 +60,7 @@ router.get("/", (req, res) => {
 });
 
 // Generate one complete story from the user's prompt.
-router.post("/generate", async (req, res, next) => {
+router.post("/generate", optionalAuth, storyLimiter, async (req, res, next) => {
   try {
     const { prompt } = req.body;
 
@@ -157,7 +158,7 @@ router.post("/generate", async (req, res, next) => {
 // Generate an illustration for the final story paragraph.
 // With a valid login and a `storyId`, the image is also stored (MongoDB, or
 // the Google Cloud Storage bucket when configured) and attached to that story.
-router.post("/generate-image", optionalAuth, async (req, res, next) => {
+router.post("/generate-image", optionalAuth, imageLimiter, async (req, res, next) => {
   try {
     const { paragraph } = req.body;
 

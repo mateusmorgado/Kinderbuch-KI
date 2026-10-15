@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "../components/Button";
 import Image from "next/image";
+import { clearSession, getToken } from "../utils/auth";
 import LoadingSpGeneric from "../components/LoadingSpinner";
 import ExperienceControls, {
   useLanguagePreference,
@@ -17,7 +18,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const userData = localStorage.getItem("user");
 
       if (!token) {
@@ -49,8 +50,7 @@ export default function Dashboard() {
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    clearSession();
     router.push("/");
   };
 

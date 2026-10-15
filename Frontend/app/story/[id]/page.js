@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import LoadingSpGeneric from "../../components/LoadingSpGeneric";
 import Button from "../../components/Button";
 import FinalStoryCard from "../../components/FinalStoryCard";
+import { getToken, handleExpiredSession, isAuthError } from "../../utils/auth";
 import ExperienceControls, {
   useLanguagePreference,
 } from "../../components/ExperienceControls";
@@ -40,7 +41,7 @@ export default function StoryDetail() {
 
   useEffect(() => {
     const fetchStory = async () => {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         router.push("/");
         return;
@@ -49,6 +50,10 @@ export default function StoryDetail() {
         const response = await fetch(`${API_BASE_URL}/api/stories/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        if (isAuthError(response.status)) {
+          handleExpiredSession();
+          return;
+        }
         if (!response.ok) throw new Error("Failed to fetch story");
         const data = await response.json();
         setStory(data);
@@ -69,7 +74,11 @@ export default function StoryDetail() {
   // Resolves to true when the story is gone, so the dialog can close.
   const handleDelete = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
+      if (!token) {
+        handleExpiredSession();
+        return false;
+      }
       const response = await fetch(`${API_BASE_URL}/api/stories/${story._id}`, {
         method: "DELETE",
         headers: {
@@ -78,6 +87,10 @@ export default function StoryDetail() {
         },
       });
 
+      if (isAuthError(response.status)) {
+        handleExpiredSession();
+        return false;
+      }
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to delete story");
