@@ -72,7 +72,7 @@ export default function Home() {
             width={420}
             height={200}
             priority
-            className="m-8 w-[330px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16"
+            className="m-8 w-[330px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert"
           />
         </div>
         <div className="mx-64"></div>
