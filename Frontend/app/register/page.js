@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import api from "../utils/api";
+import { saveSession } from "../utils/auth";
 import Image from "next/image";
 
 // Register function using Axios
@@ -32,15 +33,7 @@ export default function Register() {
     onSuccess: (data) => {
       toast.success("Registrierung erfolgreich. Sie werden weitergeleitet.");
 
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", data.accessToken); // Store the access token
-        localStorage.setItem("user", JSON.stringify({
-          id: data.user.id,
-          name: data.user.displayName,
-          displayName: data.user.displayName,
-          username: data.user.username,
-        })); // Store user details
-      }
+      saveSession(data.accessToken, data.user);
 
       setTimeout(() => {
         router.push("/dashboard"); // Redirect to dashboard after successful registration

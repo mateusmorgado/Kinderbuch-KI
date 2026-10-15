@@ -1,5 +1,5 @@
 import axios from "axios";
-import { jwtDecode } from "jwt-decode";
+import { getToken, handleExpiredSession, isAuthError } from "./auth";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -7,43 +7,28 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // Ensures cookies (refreshToken) are sent
 });
 
-let accessToken = null;
+// Send the login token with every request, when there is one.
+api.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
-// Function to refresh the access token
-const refreshAccessToken = async () => {
-  try {
-    const response = await api.post("/refresh-token");
-    accessToken = response.data.accessToken;
-    return accessToken;
-  } catch (error) {
-    console.error("Session expired, please log in again.");
-    accessToken = null;
-    return null;
-  }
-};
-
-// Axios Request Interceptor
-api.interceptors.request.use(
-  async (config) => {
-    if (!accessToken) return config;
-
-    const decoded = jwtDecode(accessToken);
-    const isExpired = decoded.exp * 1000 < Date.now();
-
-    if (isExpired) {
-      accessToken = await refreshAccessToken();
-      if (!accessToken) {
-        return Promise.reject("Sitzung abgelaufen, bitte erneut einloggen.");
-      }
+// A rejected token means the login is over. Requests without a token (like
+// a wrong password on /login) are left to the caller.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      isAuthError(error.response?.status) &&
+      error.config?.headers?.Authorization
+    ) {
+      handleExpiredSession();
     }
-
-    config.headers.Authorization = `Bearer ${accessToken}`;
-    return config;
+    return Promise.reject(error);
   },
-  (error) => Promise.reject(error)
 );
 
 export default api;

@@ -6,6 +6,7 @@ import ExperienceControls, {
   useLanguagePreference,
 } from "./components/ExperienceControls";
 import Image from "next/image";
+import { getToken } from "./utils/auth";
 
 const contributors = [
   { name: "Mateus Morgado", href: "https://github.com/mateusmorgado" },
@@ -26,7 +27,7 @@ export default function Home() {
 
   useEffect(() => {
     // Logged-in users go straight to their dashboard
-    if (localStorage.getItem("token")) {
+    if (getToken()) {
       router.push("/dashboard");
     }
   }, [router]);

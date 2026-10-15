@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import api from "../utils/api";
+import { saveSession } from "../utils/auth";
 import Image from "next/image";
 
 // Login function outside the component
@@ -35,15 +36,7 @@ export default function Login() {
     onSuccess: (data) => {
       toast.success("Login erfolgreich! Sie werden weitergeleitet.");
 
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", data.accessToken);
-        localStorage.setItem("user", JSON.stringify({
-          name: data.displayName,
-          displayName: data.displayName,
-          username: data.username,
-          id: data.id,
-        }));
-      }
+      saveSession(data.accessToken, data);
 
       setTimeout(() => {
         router.push("/dashboard");
@@ -53,7 +46,9 @@ export default function Login() {
       toast.error(
         error.response?.status === 401
           ? "Benutzername oder Passwort ist falsch."
-          : error.message || "Login fehlgeschlagen! Bitte überprüfen Sie Ihre Eingaben."
+          : error.response?.data?.error ||
+            error.message ||
+            "Login fehlgeschlagen! Bitte überprüfen Sie Ihre Eingaben."
       );
     },
   });

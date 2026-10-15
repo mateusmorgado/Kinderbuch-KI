@@ -2,12 +2,9 @@ const express = require("express");
 const helmet = require("helmet");
 const connectDB = require("./config/db");
 const cors = require("cors");
-const cookieParser = require("cookie-parser");
+const { buildCorsOptions } = require("./config/cors");
 
 require("dotenv").config();
-const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
-const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET;
-const SONAR_TOKEN = process.env.SONAR_TOKEN;
 
 // Import middleware
 const {
@@ -28,6 +25,10 @@ const promptRoutes = require("./routes/api/prompts");
 
 const app = express();
 
+// Cloud Run sits behind one proxy; trust it so req.ip is the client's
+// address, which the rate limits rely on.
+app.set("trust proxy", 1);
+
 // Use Helmet for security
 app.use(
   helmet({
@@ -36,23 +37,12 @@ app.use(
   })
 );
 
-// CORS middleware - reflects the request origin (use only in development).
-// A literal "*" is rejected by browsers when credentials are enabled.
-app.use(
-  cors({
-    origin: true, //CHANGE THIS IN THE FUTURE: restrict to the frontend URL
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+// Only the frontend may call the API from a browser (see config/cors.js).
+app.use(cors(buildCorsOptions()));
 
 // Express internal parser middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Middleware to parse cookies
-app.use(cookieParser());
 
 // Use logging middleware
 app.use(requestLogger);
