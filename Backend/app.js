@@ -22,11 +22,13 @@ const userRoutes = require("./routes/api/users");
 const storyRoutes = require("./routes/api/stories");
 const contentRoutes = require("./routes/api/contents");
 const promptRoutes = require("./routes/api/prompts");
+const imageRoutes = require("./routes/api/images");
 
 const app = express();
 
 // Cloud Run sits behind one proxy; trust it so req.ip is the client's
-// address, which the rate limits rely on.
+// address (used by the rate limits) and req.protocol is "https" when
+// building public image URLs.
 app.set("trust proxy", 1);
 
 // Use Helmet for security
@@ -53,6 +55,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/stories", storyRoutes);
 app.use("/api/contents", contentRoutes);
 app.use("/api/prompts", promptRoutes);
+app.use("/api/images", imageRoutes);
 
 // Connect Database
 connectDB();

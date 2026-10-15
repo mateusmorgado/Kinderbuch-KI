@@ -5,11 +5,17 @@ const User = require("../models/User");
 const { getDbStatus } = require("../config/db");
 const { authLimiter } = require("../middleware/rateLimit");
 const { issueAccessToken } = require("../services/tokens");
+const storage = require("../services/storage");
 const router = express.Router();
 
 // Public health endpoint for the experiment deployment.
 router.get("/", (req, res) => {
-  res.json({ status: "ok", service: "kinderbuch-backend", db: getDbStatus() });
+  res.json({
+    status: "ok",
+    service: "kinderbuch-backend",
+    db: getDbStatus(),
+    imageStorage: storage.getBackendName(),
+  });
 });
 
 // Login Route

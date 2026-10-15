@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Button from "../components/Button";
@@ -15,12 +15,30 @@ import {
   saveStory,
 } from "../api/generate/generate";
 
+const subscribeToNothing = () => () => {};
+
 export default function GeneratePage() {
   const router = useRouter();
   const [language] = useLanguagePreference();
   const isGerman = language === "de";
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  // The server renders the Ctrl hint; the client switches to ⌘ on Apple devices.
+  const isMac = useSyncExternalStore(
+    subscribeToNothing,
+    () => /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent),
+    () => false,
+  );
+
+  // Ctrl+Enter (Cmd+Enter on Mac) submits the story idea.
+  const handlePromptKeyDown = (event) => {
+    if (event.key !== "Enter" || !(event.ctrlKey || event.metaKey)) return;
+    if (event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    if (!isGenerating && prompt.trim()) {
+      event.currentTarget.form?.requestSubmit();
+    }
+  };
 
   const handleGenerate = async (event) => {
     event.preventDefault();
@@ -111,19 +129,31 @@ export default function GeneratePage() {
         <label htmlFor="story-prompt" className="sr-only">
           {isGerman ? "Deine Geschichtenidee" : "Your story idea"}
         </label>
-        <textarea
-          id="story-prompt"
-          value={prompt}
-          onChange={(event) => setPrompt(event.target.value)}
-          placeholder={
-            isGerman
-              ? "Zum Beispiel: Ein kleiner Fuchs findet im Wald eine Tür zu den Sternen ..."
-              : "For example: A little fox finds a door to the stars in the woods ..."
-          }
-          rows={7}
-          disabled={isGenerating}
-          className="block min-h-48 w-full resize-none rounded-[1.7rem] border-2 border-black bg-white p-5 text-left text-lg text-gray-900 shadow-[0_4px_0_0_rgba(0,0,0,1)] outline-none placeholder:text-gray-500 focus:ring-4 focus:ring-orange-300 disabled:opacity-60 night:border-white/25 night:bg-white/10 night:text-white night:shadow-[0_4px_0_0_rgba(0,0,0,0.7)] night:backdrop-blur-md night:placeholder:text-white/55"
-        />
+        <div className="relative">
+          <textarea
+            id="story-prompt"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            onKeyDown={handlePromptKeyDown}
+            aria-describedby="story-prompt-shortcut"
+            placeholder={
+              isGerman
+                ? "Zum Beispiel: Ein kleiner Fuchs findet im Wald eine Tür zu den Sternen ..."
+                : "For example: A little fox finds a door to the stars in the woods ..."
+            }
+            rows={7}
+            disabled={isGenerating}
+            className="block min-h-48 w-full resize-none rounded-[1.7rem] border-2 border-black bg-white p-5 pb-11 text-left text-lg text-gray-900 shadow-[0_4px_0_0_rgba(0,0,0,1)] outline-none placeholder:text-gray-500 focus:ring-4 focus:ring-orange-300 disabled:opacity-60 night:border-white/25 night:bg-white/10 night:text-white night:shadow-[0_4px_0_0_rgba(0,0,0,0.7)] night:backdrop-blur-md night:placeholder:text-white/55"
+          />
+          <p
+            id="story-prompt-shortcut"
+            className="pointer-events-none absolute right-5 bottom-3 hidden text-xs font-bold text-gray-500 sm:block night:text-white/55"
+          >
+            <kbd>{isMac ? "⌘" : "Ctrl"}</kbd> +{" "}
+            <kbd>Enter</kbd>{" "}
+            {isGerman ? "zum Erstellen" : "to create"}
+          </p>
+        </div>
       </FormScreen>
     </>
   );

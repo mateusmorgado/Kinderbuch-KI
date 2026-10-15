@@ -10,9 +10,9 @@ const storage = require("../../services/storage");
 const MAX_TITLE_LENGTH = 120;
 const MAX_TEXT_LENGTH = 20000;
 
-// Turns a stored story into the API shape: GCS object paths are replaced by
-// short-lived signed URLs in `image`, and the internal path is not exposed.
-const serializeStory = async (story) => {
+// Turns a stored story into the API shape: stored images are exposed as a
+// loadable URL in `image`, and the internal path is not exposed.
+const serializeStory = async (story, req) => {
   const plain = story.toObject ? story.toObject() : story;
 
   const content = await Promise.all(
@@ -20,7 +20,7 @@ const serializeStory = async (story) => {
       let imageUrl = image || "";
       if (imagePath) {
         try {
-          imageUrl = await storage.getSignedUrl(imagePath);
+          imageUrl = await storage.getImageUrl(imagePath, storage.getPublicBaseUrl(req));
         } catch (error) {
           logger.error(`Could not sign image URL: ${error.message}`);
         }
@@ -71,7 +71,7 @@ router.get("/", authMiddleware, async (req, res, next) => {
       createdAt: 1,
     });
     logger.info(`Fetched stories of user ${req.user.id} - Count: ${stories.length}`);
-    res.status(200).json(await Promise.all(stories.map(serializeStory)));
+    res.status(200).json(await Promise.all(stories.map((story) => serializeStory(story, req))));
   } catch (error) {
     next(error);
   }
@@ -88,7 +88,7 @@ router.get("/user/:userId", authMiddleware, async (req, res, next) => {
       createdAt: 1,
     });
     logger.info(`Fetched ${stories.length} stories for user ${req.params.userId}`);
-    res.status(200).json(await Promise.all(stories.map(serializeStory)));
+    res.status(200).json(await Promise.all(stories.map((story) => serializeStory(story, req))));
   } catch (error) {
     next(error);
   }
@@ -101,7 +101,7 @@ router.get("/:id", authMiddleware, async (req, res, next) => {
     if (!story) return;
 
     logger.info(`Fetched story ${req.params.id} - Title: ${story.title}`);
-    res.status(200).json(await serializeStory(story));
+    res.status(200).json(await serializeStory(story, req));
   } catch (error) {
     next(error);
   }
@@ -140,7 +140,7 @@ router.post("/", authMiddleware, async (req, res, next) => {
     });
 
     logger.info(`New story created: ${newStory.title} by user ${req.user.id}`);
-    res.status(201).json(await serializeStory(newStory));
+    res.status(201).json(await serializeStory(newStory, req));
   } catch (error) {
     next(error);
   }
@@ -161,7 +161,7 @@ router.put("/:id", authMiddleware, async (req, res, next) => {
     await story.save();
 
     logger.info(`Story updated: ${req.params.id} by user ${req.user.id}`);
-    res.status(200).json(await serializeStory(story));
+    res.status(200).json(await serializeStory(story, req));
   } catch (error) {
     next(error);
   }
@@ -177,11 +177,14 @@ router.delete("/:id", authMiddleware, async (req, res, next) => {
       story.content
         .filter((section) => section.imagePath)
         .map((section) =>
-          storage.deleteObject(section.imagePath).catch((error) => {
+          storage.deleteImage(section.imagePath).catch((error) => {
             logger.error(`Could not delete image ${section.imagePath}: ${error.message}`);
           }),
         ),
     );
+    await storage.deleteStoryImages(story._id).catch((error) => {
+      logger.error(`Could not delete images of story ${story._id}: ${error.message}`);
+    });
 
     await Story.findByIdAndDelete(req.params.id);
     await User.findByIdAndUpdate(req.user.id, {

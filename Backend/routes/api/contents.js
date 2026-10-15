@@ -14,9 +14,6 @@ require("dotenv").config();
 const saveImageToStory = async ({ user, storyId, image }) => {
   if (!storyId) return { saved: false };
   if (!user) return { saved: false, saveError: "not-logged-in" };
-  if (!storage.isConfigured()) {
-    return { saved: false, saveError: "storage-not-configured" };
-  }
 
   try {
     if (!mongoose.isValidObjectId(storyId)) {
@@ -29,7 +26,7 @@ const saveImageToStory = async ({ user, storyId, image }) => {
     const parsed = storage.parseDataUrl(image);
     if (!parsed) return { saved: false, saveError: "invalid-image" };
 
-    const objectName = await storage.uploadStoryImage({
+    const imagePath = await storage.saveStoryImage({
       userId: user.id,
       storyId: story._id.toString(),
       ...parsed,
@@ -38,18 +35,18 @@ const saveImageToStory = async ({ user, storyId, image }) => {
     // The illustration belongs to the final scene of the story.
     const section = story.content[story.content.length - 1];
     const previousImagePath = section.imagePath;
-    section.imagePath = objectName;
+    section.imagePath = imagePath;
     section.image = "";
     story.updatedAt = Date.now();
     await story.save();
 
     if (previousImagePath) {
-      storage.deleteObject(previousImagePath).catch((error) => {
+      storage.deleteImage(previousImagePath).catch((error) => {
         logger.error(`Could not delete old image ${previousImagePath}: ${error.message}`);
       });
     }
 
-    logger.info(`Image saved for story ${story._id}: ${objectName}`);
+    logger.info(`Image saved for story ${story._id}: ${imagePath}`);
     return { saved: true, storyId: story._id.toString() };
   } catch (error) {
     logger.error(`Saving image failed: ${error.message}`);
@@ -159,8 +156,8 @@ router.post("/generate", optionalAuth, storyLimiter, async (req, res, next) => {
 });
 
 // Generate an illustration for the final story paragraph.
-// With a valid login and a `storyId`, the image is also stored in the Google
-// Cloud Storage bucket and attached to that story.
+// With a valid login and a `storyId`, the image is also stored (MongoDB, or
+// the Google Cloud Storage bucket when configured) and attached to that story.
 router.post("/generate-image", optionalAuth, imageLimiter, async (req, res, next) => {
   try {
     const { paragraph } = req.body;
