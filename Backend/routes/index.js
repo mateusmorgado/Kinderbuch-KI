@@ -4,11 +4,12 @@ const bcrypt = require("bcryptjs");
 const { logger } = require("../middleware/logging");
 const User = require("../models/User");
 const RefreshToken = require("../models/RefreshToken");
+const { getDbStatus } = require("../config/db");
 const router = express.Router();
 
 // Public health endpoint for the experiment deployment.
 router.get("/", (req, res) => {
-  res.json({ status: "ok", service: "kinderbuch-backend" });
+  res.json({ status: "ok", service: "kinderbuch-backend", db: getDbStatus() });
 });
 
 // Login Route
