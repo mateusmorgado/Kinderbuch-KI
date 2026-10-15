@@ -65,12 +65,10 @@ const findOwnedStory = async (req, res) => {
   return story;
 };
 
-// Get all stories of the logged-in user
+// Get all stories of the logged-in user, newest first
 router.get("/", authMiddleware, async (req, res, next) => {
   try {
-    const stories = await Story.find({ userId: req.user.id }).sort({
-      createdAt: 1,
-    });
+    const stories = await Story.find({ userId: req.user.id }).sort({ createdAt: -1 });
     logger.info(`Fetched stories of user ${req.user.id} - Count: ${stories.length}`);
     res.status(200).json(await Promise.all(stories.map((story) => serializeStory(story, req))));
   } catch (error) {
@@ -85,9 +83,7 @@ router.get("/user/:userId", authMiddleware, async (req, res, next) => {
       return res.status(403).json({ error: "Not allowed to access these stories." });
     }
 
-    const stories = await Story.find({ userId: req.params.userId }).sort({
-      createdAt: 1,
-    });
+    const stories = await Story.find({ userId: req.params.userId }).sort({ createdAt: -1 });
     logger.info(`Fetched ${stories.length} stories for user ${req.params.userId}`);
     res.status(200).json(await Promise.all(stories.map((story) => serializeStory(story, req))));
   } catch (error) {
