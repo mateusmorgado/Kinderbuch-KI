@@ -37,7 +37,6 @@ const saveImageToStory = async ({ user, storyId, image }) => {
     const previousImagePath = section.imagePath;
     section.imagePath = imagePath;
     section.image = "";
-    story.updatedAt = Date.now();
     await story.save();
 
     if (previousImagePath) {
@@ -53,6 +52,12 @@ const saveImageToStory = async ({ user, storyId, image }) => {
     return { saved: false, saveError: "storage-failed" };
   }
 };
+
+// The API key goes in a header so it never shows up in a logged URL.
+const geminiHeaders = () => ({
+  "Content-Type": "application/json",
+  "x-goog-api-key": process.env.GEMINI_API_KEY,
+});
 
 // Test route
 router.get("/", (req, res) => {
@@ -75,7 +80,7 @@ router.post("/generate", optionalAuth, storyLimiter, async (req, res, next) => {
     }
 
     const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     const instruction = `
             Schreibe eine vollständige, kindgerechte Geschichte in derselben Sprache wie die Idee des Nutzers.
             Wenn die Idee auf Englisch geschrieben ist, schreibe die Geschichte vollständig auf Englisch.
@@ -97,7 +102,7 @@ router.post("/generate", optionalAuth, storyLimiter, async (req, res, next) => {
     try {
       response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: geminiHeaders(),
         signal: controller.signal,
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: instruction }] }],
@@ -173,7 +178,7 @@ router.post("/generate-image", optionalAuth, imageLimiter, async (req, res, next
     }
 
     const model = process.env.GEMINI_IMAGE_MODEL || "gemini-nano-banana-2.1";
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     const instruction = `
       Create a warm, colorful children's book illustration based on this final story scene.
       Keep the image wholesome, imaginative, and suitable for young children.
@@ -189,7 +194,7 @@ router.post("/generate-image", optionalAuth, imageLimiter, async (req, res, next
     try {
       response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: geminiHeaders(),
         signal: controller.signal,
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: instruction }] }],

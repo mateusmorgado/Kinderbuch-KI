@@ -1,31 +1,47 @@
-require("dotenv").config();
-const mongoose = require("mongoose");
-
-// mock to prevent actual connection to the db
 jest.mock("mongoose");
 
-const connectDB = require("../config/db");
+// config/db reads MONGO_URI when it is loaded, so each test loads a fresh copy.
+const loadDb = (mongoUri) => {
+  let connectDB;
+  let mongoose;
+  jest.isolateModules(() => {
+    if (mongoUri === undefined) delete process.env.MONGO_URI;
+    else process.env.MONGO_URI = mongoUri;
+    mongoose = require("mongoose");
+    mongoose.connection = { readyState: 0 };
+    connectDB = require("../config/db");
+  });
+  return { connectDB, mongoose };
+};
 
-describe("DB connection", () =>
-{
-    afterEach(() =>
-    {
-        jest.clearAllMocks(); // resetting mocks after tests
+describe("connectDB", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("reports a missing MONGO_URI instead of connecting", async () => {
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+    const { connectDB, mongoose } = loadDb(undefined);
+
+    await connectDB();
+
+    expect(mongoose.connect).not.toHaveBeenCalled();
+    expect(connectDB.getDbStatus()).toEqual({
+      state: "disconnected",
+      error: "MONGO_URI is not configured",
     });
+  });
 
-    it("should handle connection failure", async () => {
-        const errorMsg = "Connection failed!";
+  it("logs the error and exits when the connection fails", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    const exitSpy = jest.spyOn(process, "exit").mockImplementation(() => {});
+    const { connectDB, mongoose } = loadDb("mongodb://db.example/kinderbuch");
+    mongoose.connect.mockRejectedValueOnce(new Error("Connection failed!"));
 
-        jest.spyOn(console, "error").mockImplementation(() => {});
+    await connectDB();
 
-        const exitSpy = jest.spyOn(process, "exit").mockImplementation(() => {});
-
-        jest.spyOn(mongoose, "connect").mockRejectedValueOnce(new Error(errorMsg));
-
-        await connectDB();
-
-        expect(console.error).toHaveBeenCalledWith(errorMsg);
-
-        expect(exitSpy).toHaveBeenCalledWith(1);
-    });
+    expect(console.error).toHaveBeenCalledWith("Connection failed!");
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(connectDB.getDbStatus().error).toBe("Connection failed!");
+  });
 });

@@ -2,15 +2,6 @@ const winston = require("winston");
 const expressWinston = require("express-winston");
 const DailyRotateFile = require("winston-daily-rotate-file");
 
-// To remove the clear text token from the log
-const sanitizeMeta = (meta) => {
-  if (meta?.req?.headers?.authorization) {
-    console.log("Redacting authorization header");
-    meta.req.headers.authorization = "[REDACTED]";
-  }
-  return meta;
-};
-
 // Setup
 const logger = winston.createLogger({
   level: "info",
@@ -18,11 +9,13 @@ const logger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.json()
   ),
-  transports: [
-    // Logs to console
-    new winston.transports.Console(),
+  transports: [new winston.transports.Console()],
+});
 
-    // Rotating logs
+// Rotating log files only help on a machine that keeps its disk. Cloud Run
+// (K_SERVICE is set there) collects console output, and tests need no files.
+if (!process.env.K_SERVICE && process.env.NODE_ENV !== "test") {
+  logger.add(
     new DailyRotateFile({
       filename: "logs/api-%DATE%.log",
       datePattern: "YYYY-MM-DD",
@@ -30,8 +23,8 @@ const logger = winston.createLogger({
       maxFiles: "14d", // how many daily logs are stored
       zippedArchive: true, // old logs will be compressed
     }),
-  ],
-});
+  );
+}
 
 const requestLogger = expressWinston.logger({
   winstonInstance: logger,
@@ -61,8 +54,11 @@ const errorLogger = expressWinston.errorLogger({
 const errorHandler = (err, req, res, next) => {
   logger.error(`Error: ${err.message}`, { stack: err.stack });
 
-  res.status(err.status || 500).json({
-    error: err.message || "Internal Server Error",
+  // Client errors (e.g. malformed JSON) keep their message; server errors
+  // get a generic one so internals never reach the browser.
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    error: status < 500 && err.expose ? err.message : "Internal Server Error",
   });
 };
 
