@@ -18,6 +18,7 @@ COPY config/ config/
 COPY middleware/ middleware/
 COPY models/ models/
 COPY routes/ routes/
+COPY services/ services/
 COPY __tests__/ __tests__/
 
 # Ensure ownership is correct for the non-root user
