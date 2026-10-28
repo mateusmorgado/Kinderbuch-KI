@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import Button from "../components/Button";
+import StoryNarrator from "../components/StoryNarrator";
 import ConfirmDeleteDialog from "../components/ConfirmDeleteDialog";
 import ExperienceControls, {
   useLanguagePreference,
@@ -178,6 +179,14 @@ export default function StoryResultPage() {
             <div className="mb-8 flex items-center gap-3 text-xs font-black uppercase tracking-[0.2em] text-[#8a6b55] night:text-[#c9b8e8]">
               <span className="h-2 w-2 rounded-full bg-[#ed8d58]" />
               {t.eyebrow}
+            </div>
+
+            <div className="-mt-3 mb-10">
+              <StoryNarrator
+                storyId={storyData.storyId}
+                title={storyTitle}
+                text={storyData.story}
+              />
             </div>
 
             <div className="max-w-2xl min-w-0 whitespace-pre-wrap break-words text-left text-lg leading-[1.85] sm:text-xl sm:leading-[1.9]">

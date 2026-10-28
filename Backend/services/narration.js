@@ -17,6 +17,9 @@ const MAX_CHUNK_CHARS = 9000;
 // Longer stories are refused so one click can never burn through the quota.
 // 12,000 characters is about 15 minutes of audio.
 const MAX_NARRATION_CHARS = 12000;
+// Guests get shorter stories (about 7 minutes) and a short-lived cache.
+const MAX_GUEST_NARRATION_CHARS = 6000;
+const GUEST_AUDIO_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Both voices come from the ElevenLabs voice library and were picked for
 // children's stories in German and English. Either can be swapped with an
@@ -193,25 +196,29 @@ const synthesize = async ({ voiceId, text }) => {
 // request waits for the first one's recording.
 const inFlight = new Map();
 
-// Returns { mimeType, data } for the story read by `voice` ("female" or
-// "male"), from the cache when it was made before.
-const getNarration = async ({ story, voice }) => {
+// What a recording is stored under. Guest recordings have no story.
+const cacheKey = ({ storyId = null, voiceId, text }) => ({
+  storyId,
+  voiceId,
+  modelId: modelId(),
+  textHash: hashText(text),
+});
+
+// Checks the request and returns the text and voice to record, or throws.
+const prepare = ({ story, voice, maxChars = MAX_NARRATION_CHARS }) => {
   const voiceId = resolveVoiceId(voice);
   if (!voiceId) throw new NarrationError("Unbekannte Stimme.", 400);
 
   const text = buildNarrationText(story);
   if (!text) throw new NarrationError("Diese Geschichte hat keinen Text.", 400);
-  if (text.length > MAX_NARRATION_CHARS) {
+  if (text.length > maxChars) {
     throw new NarrationError("Diese Geschichte ist zu lang zum Vorlesen.", 413);
   }
+  return { voiceId, text };
+};
 
-  const key = {
-    storyId: story._id,
-    voiceId,
-    modelId: modelId(),
-    textHash: hashText(text),
-  };
-
+// Loads the recording from the cache, or records and stores it.
+const loadOrRecord = async ({ key, text, userId, expiresAt }) => {
   const cached = await StoryAudio.findOne(key).lean();
   if (cached) return { mimeType: cached.mimeType, data: cached.data, cached: true };
 
@@ -219,19 +226,16 @@ const getNarration = async ({ story, voice }) => {
     throw new NarrationError("Vorlesen ist auf diesem Server nicht eingerichtet.", 503);
   }
 
-  const flightKey = `${story._id}:${voiceId}:${key.modelId}:${key.textHash}`;
+  const flightKey = `${key.storyId}:${key.voiceId}:${key.modelId}:${key.textHash}`;
   if (!inFlight.has(flightKey)) {
     const job = (async () => {
-      const data = await synthesize({ voiceId, text });
+      const data = await synthesize({ voiceId: key.voiceId, text });
       // Older recordings of this story with this voice are outdated now.
-      await StoryAudio.deleteMany({ storyId: story._id, voiceId });
+      if (key.storyId) {
+        await StoryAudio.deleteMany({ storyId: key.storyId, voiceId: key.voiceId });
+      }
       try {
-        await StoryAudio.create({
-          ...key,
-          userId: String(story.userId),
-          mimeType: MIME_TYPE,
-          data,
-        });
+        await StoryAudio.create({ ...key, userId, expiresAt, mimeType: MIME_TYPE, data });
       } catch (error) {
         // Another server instance stored the same recording first.
         if (error.code !== 11000) throw error;
@@ -243,18 +247,48 @@ const getNarration = async ({ story, voice }) => {
   return inFlight.get(flightKey);
 };
 
+// Returns { mimeType, data } for a saved story read by `voice` ("female"
+// or "male"), from the cache when it was made before.
+const getNarration = async ({ story, voice }) => {
+  const { voiceId, text } = prepare({ story, voice });
+  return loadOrRecord({
+    key: cacheKey({ storyId: story._id, voiceId, text }),
+    text,
+    userId: String(story.userId),
+  });
+};
+
+// Guests try the app without an account, so their story is not saved.
+// The recording is kept for a day, so replaying it stays free.
+const getGuestNarration = async ({ title, text, voice }) => {
+  const prepared = prepare({
+    story: guestStory({ title, text }),
+    voice,
+    maxChars: MAX_GUEST_NARRATION_CHARS,
+  });
+  return loadOrRecord({
+    key: cacheKey(prepared),
+    text: prepared.text,
+    userId: "guest",
+    expiresAt: new Date(Date.now() + GUEST_AUDIO_TTL_MS),
+  });
+};
+
+const guestStory = ({ title, text }) => ({
+  title: typeof title === "string" ? title.slice(0, 200) : "",
+  content: [{ text: typeof text === "string" ? text : "" }],
+});
+
 // True when the recording is already stored, so serving it costs nothing.
-const hasCachedNarration = async ({ story, voice }) => {
+// Pass `story` for a saved story, or `title` and `text` for a guest one.
+const hasCachedNarration = async ({ story, title, text, voice }) => {
   const voiceId = resolveVoiceId(voice);
   if (!voiceId) return false;
-  const text = buildNarrationText(story);
+  const narrationText = buildNarrationText(story || guestStory({ title, text }));
   return Boolean(
-    await StoryAudio.exists({
-      storyId: story._id,
-      voiceId,
-      modelId: modelId(),
-      textHash: hashText(text),
-    }),
+    await StoryAudio.exists(
+      cacheKey({ storyId: story?._id ?? null, voiceId, text: narrationText }),
+    ),
   );
 };
 
@@ -263,12 +297,14 @@ const deleteStoryAudio = (storyId) => StoryAudio.deleteMany({ storyId });
 module.exports = {
   NarrationError,
   MAX_NARRATION_CHARS,
+  MAX_GUEST_NARRATION_CHARS,
   isEnabled,
   presetNames,
   resolveVoiceId,
   buildNarrationText,
   splitText,
   getNarration,
+  getGuestNarration,
   hasCachedNarration,
   deleteStoryAudio,
 };

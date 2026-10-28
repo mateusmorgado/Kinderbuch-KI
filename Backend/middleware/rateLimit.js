@@ -47,6 +47,15 @@ const narrationLimiter = createLimiter({
     "Du hast in der letzten Stunde viele Geschichten vorlesen lassen. Bitte versuche es später erneut.",
 });
 
+// Guests can try reading aloud a few times without an account.
+const guestNarrationLimiter = createLimiter({
+  windowMs: 60 * MINUTE,
+  limit: 3,
+  keyGenerator: userOrIpKey,
+  message:
+    "Du hast Vorlesen schon ein paar Mal ausprobiert. Mit einem kostenlosen Konto geht es weiter.",
+});
+
 // Slows down password guessing. Successful logins do not count.
 const authLimiter = createLimiter({
   windowMs: 15 * MINUTE,
@@ -66,6 +75,7 @@ module.exports = {
   storyLimiter,
   imageLimiter,
   narrationLimiter,
+  guestNarrationLimiter,
   authLimiter,
   registerLimiter,
   userOrIpKey,

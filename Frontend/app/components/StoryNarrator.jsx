@@ -26,9 +26,10 @@ const TEXT = {
 
 const VOICES = ["female", "male"];
 
-// Lets the story be read aloud by a female or male ElevenLabs voice. Each
-// recording is fetched once per page visit and kept as a blob URL.
-export default function StoryNarrator({ storyId }) {
+// Lets the story be read aloud by a female or male ElevenLabs voice. Pass
+// `storyId` for a saved story, or `title` and `text` for a guest's unsaved
+// one. Each recording is fetched once per page visit and kept as a blob URL.
+export default function StoryNarrator({ storyId, title, text }) {
   const [language] = useLanguagePreference();
   const t = TEXT[language] || TEXT.de;
 
@@ -64,6 +65,8 @@ export default function StoryNarrator({ storyId }) {
     try {
       const blob = await fetchNarration({
         storyId,
+        title,
+        text,
         voice: nextVoice,
         signal: controller.signal,
       });

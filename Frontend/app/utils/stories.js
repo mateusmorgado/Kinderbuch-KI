@@ -125,13 +125,21 @@ export async function deleteStory(storyId) {
 }
 
 // The story read aloud by "female" or "male". Resolves with an MP3 Blob.
-// The first time takes a while because the voice is recorded then.
-export async function fetchNarration({ storyId, voice, signal }) {
-  const res = await fetch(
-    `${API_BASE_URL}/api/stories/${storyId}/narration?voice=${encodeURIComponent(voice)}`,
-    { headers: authHeaders(), signal },
-  );
-  if (isAuthError(res.status)) {
+// A saved story is passed as `storyId`; a guest's unsaved story as `title`
+// and `text`. The first time takes a while because the voice is recorded then.
+export async function fetchNarration({ storyId, title, text, voice, signal }) {
+  const res = storyId
+    ? await fetch(
+        `${API_BASE_URL}/api/stories/${storyId}/narration?voice=${encodeURIComponent(voice)}`,
+        { headers: authHeaders(), signal },
+      )
+    : await fetch(`${API_BASE_URL}/api/contents/narrate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ title, text, voice }),
+        signal,
+      });
+  if (storyId && isAuthError(res.status)) {
     handleExpiredSession();
     throw new Error("Sitzung abgelaufen, bitte erneut einloggen.");
   }

@@ -200,3 +200,43 @@ describe("narration text", () => {
     expect(chunks.join(" ")).toContain("Satz zwei!");
   });
 });
+
+describe("guest narration", () => {
+  const guestApp = express();
+  guestApp.set("trust proxy", 1);
+  guestApp.use(express.json());
+  guestApp.use("/api/contents", require("../routes/api/contents"));
+
+  const narrate = (body, ip = "198.51.100.7") =>
+    request(guestApp)
+      .post("/api/contents/narrate")
+      .set("X-Forwarded-For", ip)
+      .send(body)
+      .buffer(true)
+      .parse(binaryParser);
+
+  it("reads an unsaved story aloud without an account and caches it", async () => {
+    const body = { title: "Gast", text: "Ein Gast hört zu.", voice: "male" };
+    const res = await narrate(body).expect(200).expect("Content-Type", "audio/mpeg");
+    expect(res.body.equals(fakeMp3)).toBe(true);
+    await narrate(body).expect(200);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    const stored = await StoryAudio.findOne({ storyId: null, userId: "guest" }).lean();
+    expect(stored.expiresAt.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it("limits guests to three new recordings per hour", async () => {
+    const ip = "198.51.100.8";
+    for (let i = 0; i < 3; i += 1) {
+      await narrate({ text: `Geschichte Nummer ${i}.`, voice: "female" }, ip).expect(200);
+    }
+    await narrate({ text: "Noch eine.", voice: "female" }, ip).expect(429);
+  });
+
+  it("refuses unknown voices and long texts", async () => {
+    await narrate({ text: "Hallo.", voice: "mine" }, "198.51.100.9").expect(400);
+    await narrate({ text: "a".repeat(7000), voice: "female" }, "198.51.100.10").expect(413);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+});

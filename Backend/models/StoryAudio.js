@@ -5,10 +5,11 @@ const mongoose = require("mongoose");
 // collection so listing stories never loads the audio bytes.
 const StoryAudioSchema = new mongoose.Schema(
   {
+    // Null for guests, whose stories are not saved.
     storyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Story",
-      required: true,
+      default: null,
     },
     userId: {
       type: String,
@@ -36,6 +37,10 @@ const StoryAudioSchema = new mongoose.Schema(
       type: Buffer,
       required: true,
     },
+    // Guest recordings are removed by MongoDB after this time.
+    expiresAt: {
+      type: Date,
+    },
   },
   { timestamps: true },
 );
@@ -44,5 +49,7 @@ StoryAudioSchema.index(
   { storyId: 1, voiceId: 1, modelId: 1, textHash: 1 },
   { unique: true },
 );
+
+StoryAudioSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model("StoryAudio", StoryAudioSchema);
