@@ -127,8 +127,9 @@ export default function MyStories() {
   }
 
   return (
-    <div className="flex max-h-screen min-h-screen flex-col justify-between overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
-      <div className="fixed right-0 bottom-0 z-0 block">
+    <div className="flex h-full flex-col justify-between overflow-hidden px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6 sm:pt-8 lg:px-8">
+      {/* On phones the cat would sit on top of the cards and buttons. */}
+      <div className="pointer-events-none fixed right-0 bottom-0 z-0 hidden md:block">
         <Image
           src="/misc/cat.png"
           alt=""
@@ -147,7 +148,7 @@ export default function MyStories() {
       </div>
 
       {stories.length === 0 ? (
-        <div className="mb-16 flex w-full flex-grow flex-col items-center justify-center">
+        <div className="mb-16 flex w-full flex-grow flex-col items-center justify-center pb-[env(safe-area-inset-bottom)]">
           <div className="text-center">
             <Image
               src="/kids/nostory.png"
@@ -181,7 +182,7 @@ export default function MyStories() {
               ))}
             </div>
           </div>
-          <div className="sticky bottom-0 z-10 flex justify-center gap-4 py-4 font-black">
+          <div className="sticky bottom-0 z-10 flex justify-center gap-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] font-black">
             <Button
               variant="primary"
               onClick={handleBackToDashboard}

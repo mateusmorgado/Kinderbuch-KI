@@ -16,16 +16,18 @@ const Roca2 = LocalFont({
 });
 
 export const metadata = {
-  title: "MellowDreams",
+  title: "Kinderbuch",
   description: "Moderne Technologie für aktive Erzähler",
   icons: {
-    icon: [{ url: "/M.svg", type: "image/svg+xml" }],
+    icon: [{ url: "/K.svg", type: "image/svg+xml" }],
   },
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
+  // Lets env(safe-area-inset-*) report the notch and gesture bar.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }) {
@@ -33,7 +35,7 @@ export default function RootLayout({ children }) {
     <html lang="de" className={`${Roca2.className} h-full`}>
       <body className="fixed inset-0 overflow-hidden text-[#2c2c2c] h-full">
         <div className="site-background bg-[url('/background.png')] md:bg-[url('/background-w.png')] fixed md:absolute inset-0 z-[-1] bg-cover bg-center bg-no-repeat" />
-        <main className="h-screen w-screen overflow-hidden">
+        <main className="h-full w-full overflow-hidden">
           <Providers>{children}</Providers>
         </main>
         <Toaster position="top-center" />
