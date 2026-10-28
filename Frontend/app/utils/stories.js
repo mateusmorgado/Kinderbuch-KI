@@ -108,6 +108,33 @@ export async function generateStoryImage({ paragraph, storyId }) {
   return data;
 }
 
+// The last paragraph of a saved story: the scene its illustration shows.
+export function lastParagraphOf(story) {
+  const texts = (story?.content || [])
+    .map((section) => section.text || "")
+    .filter((text) => text.trim());
+  const paragraphs = (texts[texts.length - 1] || "")
+    .split(/\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+  return paragraphs[paragraphs.length - 1] || "";
+}
+
+// Draws (or redraws) the illustration of a story that is already saved and
+// stores it on the story. Resolves with { image, saved }; an expired login
+// goes back to /login.
+export async function illustrateSavedStory(story) {
+  const data = await generateStoryImage({
+    paragraph: lastParagraphOf(story),
+    storyId: story._id,
+  });
+  if (data.saveError === "not-logged-in") {
+    handleExpiredSession();
+    throw new Error("Sitzung abgelaufen, bitte erneut einloggen.");
+  }
+  return data;
+}
+
 // Deletes one of the user's stories. An expired login goes back to /login.
 export async function deleteStory(storyId) {
   const res = await fetch(`${API_BASE_URL}/api/stories/${storyId}`, {

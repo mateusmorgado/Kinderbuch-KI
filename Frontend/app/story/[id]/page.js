@@ -4,10 +4,11 @@ import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import LoadingSpGeneric from "../../components/LoadingSpGeneric";
+import LoadingSpinner from "../../components/LoadingSpinner";
 import Button from "../../components/Button";
 import FinalStoryCard from "../../components/FinalStoryCard";
 import { getToken, handleExpiredSession, isAuthError } from "../../utils/auth";
-import { deleteStory } from "../../utils/stories";
+import { deleteStory, illustrateSavedStory } from "../../utils/stories";
 import ExperienceControls, {
   useLanguagePreference,
 } from "../../components/ExperienceControls";
@@ -19,6 +20,9 @@ const TEXT = {
     notFoundHint: "Vielleicht wurde sie gelöscht, oder die Verbindung ist kurz weg.",
     deleteFailed: "Die Geschichte konnte nicht gelöscht werden.",
     deleted: "Geschichte gelöscht.",
+    imageSaved: "Bild wurde in deiner Bibliothek gespeichert.",
+    imageNotSaved: "Das Bild wurde erstellt, konnte aber nicht gespeichert werden.",
+    imageFailed: "Bild konnte nicht erstellt werden!",
   },
   en: {
     back: "My stories",
@@ -26,6 +30,9 @@ const TEXT = {
     notFoundHint: "It may have been deleted, or the connection dropped for a moment.",
     deleteFailed: "The story could not be deleted.",
     deleted: "Story deleted.",
+    imageSaved: "The picture was saved to your library.",
+    imageNotSaved: "The picture was created but could not be saved.",
+    imageFailed: "The picture could not be created!",
   },
 };
 
@@ -38,6 +45,7 @@ export default function StoryDetail() {
   const [story, setStory] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
@@ -86,12 +94,38 @@ export default function StoryDetail() {
     }
   };
 
+  // Draws a picture of the last scene and shows it in place of the old one.
+  const handleGenerateImage = async () => {
+    if (isGeneratingImage) return;
+    setIsGeneratingImage(true);
+    try {
+      const data = await illustrateSavedStory(story);
+      setStory((current) => {
+        const content = [...current.content];
+        const last = content.length - 1;
+        content[last] = { ...content[last], image: data.image, hasImage: true };
+        return { ...current, content };
+      });
+      if (data.saved) {
+        toast.success(t.imageSaved);
+      } else {
+        toast.error(t.imageNotSaved);
+      }
+    } catch (err) {
+      console.error("Error generating image:", err);
+      toast.error(err.message || t.imageFailed);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   if (isLoading) {
     return <LoadingSpGeneric />;
   }
 
   return (
     <div className="h-full overflow-y-auto px-4 pb-16 sm:px-8">
+      {isGeneratingImage && <LoadingSpinner />}
       <header className="mx-auto flex max-w-4xl items-center justify-between gap-4 py-5 sm:py-7">
         <button
           type="button"
@@ -119,7 +153,12 @@ export default function StoryDetail() {
           </Button>
         </section>
       ) : (
-        <FinalStoryCard story={story} onDelete={handleDelete} />
+        <FinalStoryCard
+          story={story}
+          onDelete={handleDelete}
+          onGenerateImage={handleGenerateImage}
+          isGeneratingImage={isGeneratingImage}
+        />
       )}
     </div>
   );

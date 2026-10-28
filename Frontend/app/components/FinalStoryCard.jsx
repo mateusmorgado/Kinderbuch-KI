@@ -16,6 +16,11 @@ const TEXT = {
     theEnd: "Ende",
     newStory: "Neue Geschichte ✨",
     delete: "Geschichte löschen",
+    noPicture: "Diese Geschichte hat noch kein Bild.",
+    noPictureHint: "Wir malen dir eins zur letzten Szene.",
+    createImage: "Bild erstellen 🎨",
+    recreateImage: "Neues Bild malen",
+    drawing: "Bild wird gemalt ...",
     locale: "de-DE",
   },
   en: {
@@ -27,6 +32,11 @@ const TEXT = {
     theEnd: "The End",
     newStory: "New story ✨",
     delete: "Delete story",
+    noPicture: "This story has no picture yet.",
+    noPictureHint: "We'll paint one of the last scene for you.",
+    createImage: "Create picture 🎨",
+    recreateImage: "Paint a new picture",
+    drawing: "Painting your picture ...",
     locale: "en-GB",
   },
 };
@@ -37,7 +47,14 @@ const toParagraphs = (text = "") =>
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
 
-export default function FinalStoryCard({ story, onDelete }) {
+// With `onGenerateImage`, the last part offers to create (or redo) the
+// story's illustration.
+export default function FinalStoryCard({
+  story,
+  onDelete,
+  onGenerateImage,
+  isGeneratingImage = false,
+}) {
   const [language] = useLanguagePreference();
   const t = TEXT[language] || TEXT.de;
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -126,6 +143,28 @@ export default function FinalStoryCard({ story, onDelete }) {
                   {t.part(index + 1)}
                 </h2>
               )}
+              {onGenerateImage && index === sections.length - 1 && !section.image && (
+                <div className="mb-8 flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-[#e6c9a8] bg-[#fff3e2]/70 px-6 py-8 text-center night:border-white/20 night:bg-white/5">
+                  <span aria-hidden="true" className="text-5xl">
+                    🖼️
+                  </span>
+                  <div>
+                    <p className="font-black">{t.noPicture}</p>
+                    <p className="mt-1 text-sm text-[#6d5b4d] night:text-[#c9b8e8]">
+                      {t.noPictureHint}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={onGenerateImage}
+                    disabled={isGeneratingImage}
+                    aria-busy={isGeneratingImage}
+                  >
+                    {isGeneratingImage ? t.drawing : t.createImage}
+                  </Button>
+                </div>
+              )}
               {section.image && (
                 <figure className="mb-8 overflow-hidden rounded-3xl border-2 border-black/10 bg-[#f5eadb] shadow-[0_12px_30px_rgba(61,43,30,0.14)] night:border-white/10 night:bg-[#2d2742]">
                   <Image
@@ -137,6 +176,20 @@ export default function FinalStoryCard({ story, onDelete }) {
                     loading={index === 0 ? "eager" : "lazy"}
                     className="aspect-[4/3] w-full object-cover"
                   />
+                  {onGenerateImage && index === sections.length - 1 && (
+                    <figcaption className="flex justify-end px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={onGenerateImage}
+                        disabled={isGeneratingImage}
+                        aria-busy={isGeneratingImage}
+                        className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-[#8a4a2f] transition hover:bg-white/70 focus:outline-none focus:ring-4 focus:ring-pink-300 disabled:opacity-60 night:text-[#f4a77f] night:hover:bg-white/10"
+                      >
+                        <span aria-hidden="true">🎨</span>
+                        {isGeneratingImage ? t.drawing : t.recreateImage}
+                      </button>
+                    </figcaption>
+                  )}
                 </figure>
               )}
               <div className="mx-auto max-w-2xl break-words text-lg leading-[1.85] sm:text-xl sm:leading-[1.9]">
