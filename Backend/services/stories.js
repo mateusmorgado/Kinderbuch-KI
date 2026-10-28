@@ -83,8 +83,10 @@ const saveImageToStory = async ({ user, storyId, image }) => {
     section.image = "";
     await story.save();
 
+    // Awaited so the old image is gone when the response is sent; a failed
+    // delete is only logged.
     if (previousImagePath) {
-      storage.deleteImage(previousImagePath).catch((error) => {
+      await storage.deleteImage(previousImagePath).catch((error) => {
         logger.error(`Could not delete old image ${previousImagePath}: ${error.message}`);
       });
     }
