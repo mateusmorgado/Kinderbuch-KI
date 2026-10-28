@@ -6,11 +6,14 @@ const { logger } = require("../../middleware/logging");
 const Story = require("../../models/Story");
 const User = require("../../models/User");
 const storage = require("../../services/storage");
-const { deleteStoryWithImages } = require("../../services/stories");
+const {
+  MAX_TITLE_LENGTH,
+  createStory,
+  deleteStoryWithImages,
+} = require("../../services/stories");
 const narration = require("../../services/narration");
 const { narrationLimiter } = require("../../middleware/rateLimit");
 
-const MAX_TITLE_LENGTH = 120;
 const MAX_TEXT_LENGTH = 20000;
 
 // Turns a stored story into the API shape: stored images are exposed as a
@@ -33,14 +36,6 @@ const serializeStory = async (story, req) => {
   );
 
   return { ...plain, content };
-};
-
-const buildTitle = (title, prompt) => {
-  const candidate =
-    (typeof title === "string" && title.trim()) ||
-    (typeof prompt === "string" && prompt.trim().split(/[.!?\n]/)[0]) ||
-    "Deine Geschichte";
-  return candidate.slice(0, MAX_TITLE_LENGTH);
 };
 
 const findOwnedStory = async (req, res) => {
@@ -190,16 +185,7 @@ router.post("/", authMiddleware, async (req, res, next) => {
       return res.status(400).json({ error: "Valid story text is required." });
     }
 
-    const newStory = await Story.create({
-      userId: req.user.id,
-      title: buildTitle(title, prompt),
-      prompt: typeof prompt === "string" ? prompt.trim().slice(0, 2000) : "",
-      content: scenes,
-    });
-
-    await User.findByIdAndUpdate(req.user.id, {
-      $push: { createdStories: newStory._id },
-    });
+    const newStory = await createStory({ userId: req.user.id, title, prompt, scenes });
 
     logger.info(`New story created: ${newStory.title} by user ${req.user.id}`);
     res.status(201).json(await serializeStory(newStory, req));
