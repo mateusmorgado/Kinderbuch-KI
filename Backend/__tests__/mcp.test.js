@@ -339,7 +339,7 @@ describe("MCP tools", () => {
       capabilities: {},
       clientInfo: { name: "test", version: "1" },
     }).expect(200);
-    expect(init.body.result.serverInfo.name).toBe("kinderbuch-ki");
+    expect(init.body.result.serverInfo.name).toBe("kinderbuch");
 
     const prompts = await rpc(accessToken, "prompts/list").expect(200);
     expect(prompts.body.result.prompts.map((prompt) => prompt.name)).toEqual(["bedtime_story"]);

@@ -206,7 +206,7 @@ const renderLoginPage = ({ clientName, loginRequest, error = "", username = "" }
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Mit Kinderbuch KI verbinden</title>
+<title>Mit Kinderbuch verbinden</title>
 <style>
   :root { color-scheme: light dark; --bg: #fff8ec; --card: #ffffff; --text: #3b2a1a; --muted: #7a6450; --accent: #f28c28; --border: #f1dcc0; --error: #b42318; }
   @media (prefers-color-scheme: dark) { :root { --bg: #1d1712; --card: #2a221b; --text: #f7ead9; --muted: #c4ae96; --border: #4a3b2e; --error: #ff8a80; } }
@@ -229,7 +229,7 @@ const renderLoginPage = ({ clientName, loginRequest, error = "", username = "" }
 </head>
 <body>
 <main>
-  <h1>✨ Mit Kinderbuch KI verbinden</h1>
+  <h1>✨ Mit Kinderbuch verbinden</h1>
   <p><strong>${escapeHtml(clientName || "Eine App")}</strong> möchte für dich Geschichten schreiben, illustrieren und in deinem Konto speichern.</p>
   ${error ? `<p class="error" role="alert">${escapeHtml(error)}</p>` : ""}
   <form method="post" action="/oauth/login">

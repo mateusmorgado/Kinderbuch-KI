@@ -30,19 +30,19 @@ const ASSISTANTS = {
       de: [
         "Öffne in Claude Einstellungen → Konnektoren.",
         "Wähle „Benutzerdefinierten Konnektor hinzufügen“.",
-        "Name: Kinderbuch KI. Füge die Adresse oben ein und klicke auf „Hinzufügen“.",
+        "Name: Kinderbuch. Füge die Adresse oben ein und klicke auf „Hinzufügen“.",
         "Klicke auf „Verbinden“ und melde dich mit deinem Kinderbuch-Konto an.",
       ],
       en: [
         "In Claude, open Settings → Connectors.",
         "Choose “Add custom connector”.",
-        "Name it Kinderbuch KI, paste the address above and click “Add”.",
+        "Name it Kinderbuch, paste the address above and click “Add”.",
         "Click “Connect” and log in with your Kinderbuch account.",
       ],
     },
     tryIt: {
-      de: "Frag dann: „Schreib mir mit Kinderbuch KI eine Gutenachtgeschichte über eine mutige Schnecke.“",
-      en: "Then ask: “Use Kinderbuch KI to write a bedtime story about a brave snail.”",
+      de: "Frag dann: „Schreib mir mit Kinderbuch eine Gutenachtgeschichte über eine mutige Schnecke.“",
+      en: "Then ask: “Use Kinderbuch to write a bedtime story about a brave snail.”",
     },
   },
   chatgpt: {
@@ -53,19 +53,19 @@ const ASSISTANTS = {
       de: [
         "Öffne in ChatGPT Einstellungen → Apps & Konnektoren → Erweitert und schalte den Entwicklermodus ein.",
         "Klicke auf „Erstellen“, um einen neuen Konnektor anzulegen.",
-        "Name: Kinderbuch KI. Füge die Adresse oben ein und wähle OAuth als Anmeldung.",
+        "Name: Kinderbuch. Füge die Adresse oben ein und wähle OAuth als Anmeldung.",
         "Speichere und melde dich mit deinem Kinderbuch-Konto an.",
       ],
       en: [
         "In ChatGPT, open Settings → Apps & Connectors → Advanced and turn on developer mode.",
         "Click “Create” to add a new connector.",
-        "Name it Kinderbuch KI, paste the address above and pick OAuth for authentication.",
+        "Name it Kinderbuch, paste the address above and pick OAuth for authentication.",
         "Save, then log in with your Kinderbuch account.",
       ],
     },
     tryIt: {
-      de: "Wähle Kinderbuch KI dann im Chat unter „+“ aus und bitte um eine Geschichte.",
-      en: "Then pick Kinderbuch KI under “+” in a chat and ask for a story.",
+      de: "Wähle Kinderbuch dann im Chat unter „+“ aus und bitte um eine Geschichte.",
+      en: "Then pick Kinderbuch under “+” in a chat and ask for a story.",
     },
   },
 };
@@ -74,7 +74,7 @@ const TEXT = {
   de: {
     heading: "Geschichten auch in deinem KI-Assistenten",
     connect: (name) => `Mit ${name} verbinden`,
-    dialogTitle: (name) => `Kinderbuch KI mit ${name} verbinden`,
+    dialogTitle: (name) => `Kinderbuch mit ${name} verbinden`,
     intro: (name) =>
       `So kann ${name} Geschichten für dich schreiben, illustrieren und direkt in deiner Bibliothek speichern.`,
     address: "Adresse des Konnektors",
@@ -86,7 +86,7 @@ const TEXT = {
   en: {
     heading: "Your stories in your AI assistant, too",
     connect: (name) => `Connect to ${name}`,
-    dialogTitle: (name) => `Connect Kinderbuch KI to ${name}`,
+    dialogTitle: (name) => `Connect Kinderbuch to ${name}`,
     intro: (name) =>
       `${name} can then write and illustrate stories for you and save them straight into your library.`,
     address: "Connector address",

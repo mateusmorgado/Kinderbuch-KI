@@ -61,7 +61,7 @@ const buildRouter = (baseUrl) => {
       provider,
       issuerUrl: new URL(baseUrl),
       resourceServerUrl: mcpUrl,
-      resourceName: "Kinderbuch KI",
+      resourceName: "Kinderbuch",
       scopesSupported: [SCOPE],
       serviceDocumentationUrl: new URL("https://github.com/mateusmorgado/Kinderbuch-KI#mit-claude-oder-chatgpt-verbinden"),
       authorizationOptions: sdkRateLimit,

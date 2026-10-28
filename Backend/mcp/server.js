@@ -81,10 +81,10 @@ const storyIdInput = z
 // request carries its own login.
 const createMcpServer = () => {
   const server = new McpServer(
-    { name: "kinderbuch-ki", title: "Kinderbuch KI", version },
+    { name: "kinderbuch", title: "Kinderbuch", version },
     {
       instructions:
-        "Kinderbuch KI writes short, illustrated children's stories (about 200 words) and keeps them " +
+        "Kinderbuch writes short, illustrated children's stories (about 200 words) and keeps them " +
         "in the user's library at " + frontendUrl() + ". Stories are written in the language of the idea. " +
         "After write_story, offer to illustrate it with illustrate_story, and share the story link.",
     },
@@ -117,7 +117,7 @@ const createMcpServer = () => {
       const story = await createStory({ userId, title, prompt: idea, scenes: [{ text }] });
       logger.info(`MCP: story ${story._id} written for user ${userId}`);
 
-      return textResult(`# ${story.title}\n\n${text}\n\nRead it in Kinderbuch KI: ${storyUrl(story)}`, {
+      return textResult(`# ${story.title}\n\n${text}\n\nRead it in Kinderbuch: ${storyUrl(story)}`, {
         storyId: story._id.toString(),
         title: story.title,
         url: storyUrl(story),
@@ -248,7 +248,7 @@ const createMcpServer = () => {
           content: {
             type: "text",
             text:
-              `Use Kinderbuch KI to write a calm, cozy bedtime story about ${hero}` +
+              `Use Kinderbuch to write a calm, cozy bedtime story about ${hero}` +
               (place ? ` ${place}` : "") +
               ". Then illustrate it and show me the link.",
           },
