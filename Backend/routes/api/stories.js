@@ -7,6 +7,8 @@ const Story = require("../../models/Story");
 const User = require("../../models/User");
 const storage = require("../../services/storage");
 const { deleteStoryWithImages } = require("../../services/stories");
+const narration = require("../../services/narration");
+const { narrationLimiter } = require("../../middleware/rateLimit");
 
 const MAX_TITLE_LENGTH = 120;
 const MAX_TEXT_LENGTH = 20000;
@@ -103,6 +105,68 @@ router.get("/:id", authMiddleware, async (req, res, next) => {
     next(error);
   }
 });
+
+// Loads the owned story into req.story for the narration route.
+const loadOwnedStory = async (req, res, next) => {
+  try {
+    const story = await findOwnedStory(req, res);
+    if (!story) return;
+    req.story = story;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Only new recordings count against the narration limit.
+const limitNewNarrations = async (req, res, next) => {
+  try {
+    const cached = await narration.hasCachedNarration({
+      story: req.story,
+      voice: req.query.voice,
+    });
+    if (cached) return next();
+  } catch (error) {
+    return next(error);
+  }
+  narrationLimiter(req, res, next);
+};
+
+// The story read aloud as MP3 (only the owner). `voice` is "female" or
+// "male". The first request records it with ElevenLabs, later ones are
+// served from the database.
+router.get(
+  "/:id/narration",
+  authMiddleware,
+  loadOwnedStory,
+  limitNewNarrations,
+  async (req, res, next) => {
+    const voice = req.query.voice;
+    if (!narration.presetNames().includes(voice)) {
+      return res.status(400).json({ error: "Unknown voice." });
+    }
+
+    try {
+      const audio = await narration.getNarration({ story: req.story, voice });
+      const data = audio.data.buffer ? Buffer.from(audio.data.buffer) : audio.data;
+
+      logger.info(
+        `Narration of story ${req.story._id} (${voice}) ${audio.cached ? "served from cache" : "recorded"}`,
+      );
+      res.set({
+        "Content-Type": audio.mimeType,
+        "Cache-Control": "private, no-store",
+      });
+      res.send(data);
+    } catch (error) {
+      if (error instanceof narration.NarrationError) {
+        logger.warn(`Narration of story ${req.story._id} failed: ${error.message}`);
+        return res.status(error.status).json({ error: error.message });
+      }
+      next(error);
+    }
+  },
+);
 
 // Create a new story. Accepts either `text` (one string) or `content`
 // (array of { text } scenes). Images are attached afterwards through

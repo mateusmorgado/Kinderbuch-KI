@@ -37,6 +37,16 @@ const imageLimiter = createLimiter({
     "Du hast in der letzten Stunde viele Bilder erstellt. Bitte versuche es später erneut.",
 });
 
+// Reading a story aloud is billed per character by ElevenLabs. Only new
+// recordings count; replaying a stored one is free.
+const narrationLimiter = createLimiter({
+  windowMs: 60 * MINUTE,
+  limit: 10,
+  keyGenerator: userOrIpKey,
+  message:
+    "Du hast in der letzten Stunde viele Geschichten vorlesen lassen. Bitte versuche es später erneut.",
+});
+
 // Slows down password guessing. Successful logins do not count.
 const authLimiter = createLimiter({
   windowMs: 15 * MINUTE,
@@ -55,6 +65,7 @@ const registerLimiter = createLimiter({
 module.exports = {
   storyLimiter,
   imageLimiter,
+  narrationLimiter,
   authLimiter,
   registerLimiter,
   userOrIpKey,

@@ -3,6 +3,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Button from "./Button";
 import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
+import StoryNarrator from "./StoryNarrator";
 import { useLanguagePreference } from "./ExperienceControls";
 
 const TEXT = {
@@ -109,6 +110,7 @@ export default function FinalStoryCard({ story, onDelete }) {
               {story.prompt}
             </p>
           )}
+          {story._id && <StoryNarrator storyId={story._id} />}
         </header>
 
         <div className="px-6 py-8 sm:px-14 sm:py-12 lg:px-20">

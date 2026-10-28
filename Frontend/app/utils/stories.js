@@ -123,3 +123,21 @@ export async function deleteStory(storyId) {
     throw new Error(data.error || "Geschichte konnte nicht gelöscht werden!");
   }
 }
+
+// The story read aloud by "female" or "male". Resolves with an MP3 Blob.
+// The first time takes a while because the voice is recorded then.
+export async function fetchNarration({ storyId, voice, signal }) {
+  const res = await fetch(
+    `${API_BASE_URL}/api/stories/${storyId}/narration?voice=${encodeURIComponent(voice)}`,
+    { headers: authHeaders(), signal },
+  );
+  if (isAuthError(res.status)) {
+    handleExpiredSession();
+    throw new Error("Sitzung abgelaufen, bitte erneut einloggen.");
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Die Geschichte konnte nicht vorgelesen werden.");
+  }
+  return res.blob();
+}
