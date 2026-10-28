@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const StoryAudio = require("../models/StoryAudio");
+const { logger } = require("../middleware/logging");
 
 require("dotenv").config();
 
@@ -138,6 +139,8 @@ const elevenLabsError = async (
   try {
     const body = await response.json();
     detail = body?.detail?.status || body?.detail?.message || "";
+    // The full answer says why, e.g. which permission a restricted key lacks.
+    logger.warn(`ElevenLabs ${response.status}: ${JSON.stringify(body?.detail ?? body)}`);
   } catch {
     // Not JSON; the status code is enough.
   }
@@ -163,7 +166,10 @@ const elevenLabsError = async (
     );
   }
   if (response.status === 401) {
-    return new NarrationError("Der ElevenLabs-Schlüssel wurde abgelehnt.", 502);
+    return new NarrationError(
+      `Der ElevenLabs-Schlüssel wurde abgelehnt${detail ? ` (${detail})` : ""}.`,
+      502,
+    );
   }
   if (response.status === 429) {
     return new NarrationError(
