@@ -5,6 +5,7 @@ import Button from "../components/Button";
 import Image from "next/image";
 import { clearSession, getToken } from "../utils/auth";
 import LoadingSpGeneric from "../components/LoadingSpinner";
+import ConnectAssistants from "../components/ConnectAssistants";
 import ExperienceControls, {
   useLanguagePreference,
 } from "../components/ExperienceControls";
@@ -98,6 +99,8 @@ export default function Dashboard() {
           Logout
         </Button>
       </div>
+
+      <ConnectAssistants />
 
       <div className="fixed right-0 bottom-3/5 md:bottom-1/5 block slide-in-rl">
         <Image

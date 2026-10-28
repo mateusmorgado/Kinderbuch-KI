@@ -42,6 +42,17 @@
 
 ---
 
+## Mit Claude oder ChatGPT verbinden
+
+Das Backend ist auch ein [MCP-Server](https://modelcontextprotocol.io) (Model Context Protocol). Claude, ChatGPT und andere KI-Assistenten können damit Geschichten im Konto des Nutzers schreiben, illustrieren und lesen. Auf dem Dashboard führen die Buttons „Mit Claude verbinden“ und „Mit ChatGPT verbinden“ durch die Einrichtung.
+
+- **Adresse:** `https://<backend>/mcp` (Streamable HTTP, zustandslos)
+- **Anmeldung:** OAuth 2.1 mit PKCE und dynamischer Client-Registrierung. Der Assistent öffnet eine Login-Seite des Backends, auf der sich der Nutzer mit seinem Kinderbuch-Konto anmeldet. Access Tokens gelten eine Stunde, Refresh Tokens rotieren.
+- **Tools:** `write_story`, `illustrate_story`, `list_my_stories`, `read_story`, `get_story_ideas`
+- **Prompt:** `bedtime_story`
+
+Der Code liegt in `Backend/mcp/`: `server.js` (Tools), `oauth.js` (Login und Tokens) und `index.js` (Routen). Zum lokalen Testen eignet sich der [MCP Inspector](https://github.com/modelcontextprotocol/inspector) mit `http://localhost:8082/mcp`.
+
 ## User Stories
 
 1. **Hauptcharakter wählen**

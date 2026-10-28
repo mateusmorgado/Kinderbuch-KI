@@ -23,6 +23,7 @@ const storyRoutes = require("./routes/api/stories");
 const contentRoutes = require("./routes/api/contents");
 const promptRoutes = require("./routes/api/prompts");
 const imageRoutes = require("./routes/api/images");
+const mcpRouter = require("./mcp");
 
 const app = express();
 
@@ -38,6 +39,11 @@ app.use(
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
+
+// The MCP server and its OAuth login, for Claude, ChatGPT and other AI
+// apps. They call from their own servers and bring their own CORS rules,
+// so this comes before the website's CORS check.
+app.use(mcpRouter);
 
 // Only the frontend may call the API from a browser (see config/cors.js).
 app.use(cors(buildCorsOptions()));
