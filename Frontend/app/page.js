@@ -34,7 +34,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="fixed right-4 top-4 z-20">
+      <div className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-20">
         <ExperienceControls />
       </div>
       <div className="fixed -right-9 -bottom-5 md:-bottom-1 md:right-15 block slide-in-bt">
@@ -65,58 +65,60 @@ export default function Home() {
           className=" md:w-[260px] xl:w-[280px]"
         />
       </div>
-      <div className="flex flex-col min-h-screen justify-between py-8 px-2 items-center text-center">
-        <div className="w-full sm:px-0">
-          <Image
-            src="/mellow.svg"
-            alt="MellowDreams"
-            width={420}
-            height={200}
-            priority
-            className="m-8 w-[330px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert"
-          />
-        </div>
-        <div className="mx-64"></div>
+      <div className="h-full overflow-y-auto">
+        <div className="flex flex-col min-h-full justify-between pt-8 pb-[max(2rem,env(safe-area-inset-bottom))] px-2 items-center text-center">
+          <div className="w-full sm:px-0">
+            <Image
+              src="/mellow.svg"
+              alt="MellowDreams"
+              width={420}
+              height={200}
+              priority
+              className="m-8 w-[330px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert"
+            />
+          </div>
+          <div className="mx-64"></div>
 
-        <div className="text-3xl font-black max-w-[14rem] sm:max-w-none mx-auto">
-          {isGerman
-            ? "Wo Träume zu Geschichten werden"
-            : "Where dreams become stories"}
-        </div>
+          <div className="text-3xl font-black max-w-[14rem] sm:max-w-none mx-auto">
+            {isGerman
+              ? "Wo Träume zu Geschichten werden"
+              : "Where dreams become stories"}
+          </div>
 
-        <div className="w-60 font-black grid grid-cols-1 gap-4 justify-items-center ">
-          <Button variant="primary" className="w-60" href="/register">
-            {isGerman ? "Registrieren" : "Sign up"}
-          </Button>
-          <Button variant="secondary" className="w-60" href="/login">
-            {isGerman ? "Login" : "Log in"}
-          </Button>
-          <Button variant="glow" className="w-60" href="/generate">
-            {isGerman ? "Experiment starten" : "Start experiment"}
-          </Button>
-        </div>
+          <div className="w-60 font-black grid grid-cols-1 gap-4 justify-items-center ">
+            <Button variant="primary" className="w-60" href="/register">
+              {isGerman ? "Registrieren" : "Sign up"}
+            </Button>
+            <Button variant="secondary" className="w-60" href="/login">
+              {isGerman ? "Login" : "Log in"}
+            </Button>
+            <Button variant="glow" className="w-60" href="/generate">
+              {isGerman ? "Experiment starten" : "Start experiment"}
+            </Button>
+          </div>
 
-        <footer className="mt-6 max-w-3xl pb-2 text-xs font-bold">
-          <p className="mb-1 uppercase tracking-widest opacity-70">
-            {isGerman ? "Mitwirkende" : "Contributors"}
-          </p>
-          <p className="leading-relaxed opacity-80">
-            {contributors.map((contributor, index) => (
-              <span key={contributor.name}>
-                {index > 0 && " · "}
-                <a
-                  href={contributor.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="transition-opacity hover:opacity-70 hover:underline hover:underline-offset-2 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-1"
-                  aria-label={`Visit ${contributor.name} on GitHub`}
-                >
-                  {contributor.name}
-                </a>
-              </span>
-            ))}
-          </p>
-        </footer>
+          <footer className="mt-6 max-w-3xl pb-2 text-xs font-bold">
+            <p className="mb-1 uppercase tracking-widest opacity-70">
+              {isGerman ? "Mitwirkende" : "Contributors"}
+            </p>
+            <p className="leading-relaxed opacity-80">
+              {contributors.map((contributor, index) => (
+                <span key={contributor.name}>
+                  {index > 0 && " · "}
+                  <a
+                    href={contributor.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="transition-opacity hover:opacity-70 hover:underline hover:underline-offset-2 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-1"
+                    aria-label={`Visit ${contributor.name} on GitHub`}
+                  >
+                    {contributor.name}
+                  </a>
+                </span>
+              ))}
+            </p>
+          </footer>
+        </div>
       </div>
     </>
   );

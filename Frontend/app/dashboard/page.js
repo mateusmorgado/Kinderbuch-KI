@@ -60,47 +60,49 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen justify-between items-center text-center">
-      <div className="fixed right-4 top-4 z-20">
+    <div className="h-full overflow-y-auto">
+      <div className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-20">
         <ExperienceControls />
       </div>
-      <div className="w-full px-4 py-6 sm:px-0">
-        <Image
-          src="/mellow.svg"
-          alt="MellowDreams"
-          width={350}
-          height={200}
-          priority
-          className="m-8 w-[330px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert"
-        />
-      </div>
+      <div className="flex flex-col min-h-full justify-between items-center pb-[env(safe-area-inset-bottom)] text-center">
+        <div className="w-full px-4 py-6 sm:px-0">
+          <Image
+            src="/mellow.svg"
+            alt="MellowDreams"
+            width={350}
+            height={200}
+            priority
+            className="m-8 w-[330px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert"
+          />
+        </div>
 
-      <div className="text-3xl font-black max-w-[20rem] xl:max-w-none mx-auto mb-12">
-        {firstName
-          ? firstName.charAt(0).toUpperCase() + firstName.slice(1)
-          : isGerman
-            ? "Hallo"
-            : "Hello"}
-        ,
-        <br />
-        {isGerman
-          ? "willkommen zu deiner zauberhaften Bibliothek!"
-          : "welcome to your magical library!"}
-      </div>
+        <div className="text-3xl font-black max-w-[20rem] xl:max-w-none mx-auto mb-12">
+          {firstName
+            ? firstName.charAt(0).toUpperCase() + firstName.slice(1)
+            : isGerman
+              ? "Hallo"
+              : "Hello"}
+          ,
+          <br />
+          {isGerman
+            ? "willkommen zu deiner zauberhaften Bibliothek!"
+            : "welcome to your magical library!"}
+        </div>
 
-      <div className="font-black grid grid-cols-1 gap-6 justify-items-center mb-8  ">
-        <Button variant="primary" className="min-w-74" href="/generate">
-          {isGerman ? "Erstelle eine Geschichte" : "Create a story"} 📝
-        </Button>
-        <Button variant="secondary" className="min-w-74" href="/mystories">
-          {isGerman ? "Meine Geschichten" : "My stories"} 📚
-        </Button>
-        <Button variant="tertiary" onClick={handleLogout}>
-          Logout
-        </Button>
-      </div>
+        <div className="font-black grid grid-cols-1 gap-6 justify-items-center mb-8  ">
+          <Button variant="primary" className="min-w-74" href="/generate">
+            {isGerman ? "Erstelle eine Geschichte" : "Create a story"} 📝
+          </Button>
+          <Button variant="secondary" className="min-w-74" href="/mystories">
+            {isGerman ? "Meine Geschichten" : "My stories"} 📚
+          </Button>
+          <Button variant="tertiary" onClick={handleLogout}>
+            Logout
+          </Button>
+        </div>
 
-      <ConnectAssistants />
+        <ConnectAssistants />
+      </div>
 
       <div className="fixed right-0 bottom-3/5 md:bottom-1/5 block slide-in-rl">
         <Image

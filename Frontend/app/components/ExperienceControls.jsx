@@ -77,7 +77,7 @@ export default function ExperienceControls() {
             currentLanguage === "de" ? "en" : "de",
           )
         }
-        className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-black/20 bg-white/80 text-sm font-black shadow-md transition hover:scale-105 hover:bg-pink-100 focus:outline-none focus:ring-4 focus:ring-pink-300"
+        className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-black/20 bg-white/80 text-sm font-black shadow-md transition hover:scale-105 hover:bg-pink-100 focus:outline-none focus:ring-4 focus:ring-pink-300 night:border-white/25 night:bg-[#221d33]/85 night:text-[#efe6ff] night:hover:bg-[#2f2748]"
         aria-label={
           language === "de" ? "Switch to English" : "Zu Deutsch wechseln"
         }
@@ -88,7 +88,7 @@ export default function ExperienceControls() {
       <button
         type="button"
         onClick={() => setIsNight((currentIsNight) => !currentIsNight)}
-        className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-black/20 bg-white/80 text-xl shadow-md transition hover:scale-105 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+        className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-black/20 bg-white/80 text-xl shadow-md transition hover:scale-105 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-300 night:border-white/25 night:bg-[#221d33]/85 night:text-[#efe6ff] night:hover:bg-[#2f2748]"
         aria-label={isNight ? "Switch to day mode" : "Nachtmodus einschalten"}
         title={isNight ? "Day mode" : "Night mode"}
       >
