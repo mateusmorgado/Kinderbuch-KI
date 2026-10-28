@@ -22,7 +22,14 @@ const TEXT = {
 };
 
 // Asks before a story is deleted. Escape or a click outside cancels.
-export default function ConfirmDeleteDialog({ onCancel, onConfirm, isDeleting }) {
+// `title` and `body` replace the story wording for other things to delete.
+export default function ConfirmDeleteDialog({
+  onCancel,
+  onConfirm,
+  isDeleting,
+  title,
+  body,
+}) {
   const [language] = useLanguagePreference();
   const t = TEXT[language] || TEXT.de;
   const cancelRef = useRef(null);
@@ -53,10 +60,10 @@ export default function ConfirmDeleteDialog({ onCancel, onConfirm, isDeleting })
           🗑️
         </div>
         <h2 id="delete-story-title" className="mb-2 text-2xl font-black">
-          {t.confirmTitle}
+          {title || t.confirmTitle}
         </h2>
         <p id="delete-story-body" className="mb-7 opacity-80">
-          {t.confirmBody}
+          {body || t.confirmBody}
         </p>
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
           <button

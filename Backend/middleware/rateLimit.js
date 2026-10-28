@@ -56,6 +56,23 @@ const guestNarrationLimiter = createLimiter({
     "Du hast Vorlesen schon ein paar Mal ausprobiert. Mit einem kostenlosen Konto geht es weiter.",
 });
 
+// Cloning a voice uses one of the ElevenLabs account's voice slots.
+const voiceCloneLimiter = createLimiter({
+  windowMs: 24 * 60 * MINUTE,
+  limit: 5,
+  keyGenerator: userOrIpKey,
+  message: "Du hast heute schon einige Stimmen aufgenommen. Bitte versuche es morgen erneut.",
+});
+
+// Guests may hear their own voice once or twice a day without an account.
+const voiceTrialLimiter = createLimiter({
+  windowMs: 24 * 60 * MINUTE,
+  limit: 2,
+  keyGenerator: userOrIpKey,
+  message:
+    "Du hast deine Stimme heute schon ausprobiert. Mit einem kostenlosen Konto kannst du sie behalten.",
+});
+
 // Slows down password guessing. Successful logins do not count.
 const authLimiter = createLimiter({
   windowMs: 15 * MINUTE,
@@ -76,6 +93,8 @@ module.exports = {
   imageLimiter,
   narrationLimiter,
   guestNarrationLimiter,
+  voiceCloneLimiter,
+  voiceTrialLimiter,
   authLimiter,
   registerLimiter,
   userOrIpKey,

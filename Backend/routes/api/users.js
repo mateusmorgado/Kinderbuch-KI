@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
 const Story = require("../../models/Story");
 const { deleteStoryWithImages } = require("../../services/stories");
+const { deleteClonedVoice } = require("../../services/voiceClone");
 const { USERNAME_REGEX } = User;
 const authMiddleware = require("../../middleware/authMiddleware");
 const { logger } = require("../../middleware/logging");
@@ -152,13 +153,18 @@ router.put("/:id", authMiddleware, ownAccountOnly, async (req, res, next) => {
     }
 });
 
-// Delete your own account, with all of its stories and images
+// Delete your own account, with all of its stories, images and cloned voice
 router.delete("/:id", authMiddleware, ownAccountOnly, async (req, res, next) => {
     try {
         const stories = await Story.find({ userId: req.params.id });
         for (const story of stories) {
             await deleteStoryWithImages(story);
         }
+
+        const user = await User.findById(req.params.id).lean();
+        await deleteClonedVoice(user).catch((error) => {
+            logger.error(`Could not delete cloned voice of user ${req.params.id}: ${error.message}`);
+        });
 
         const deletedUser = await User.findByIdAndDelete(req.params.id);
 

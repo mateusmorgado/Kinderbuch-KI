@@ -23,6 +23,7 @@ const storyRoutes = require("./routes/api/stories");
 const contentRoutes = require("./routes/api/contents");
 const promptRoutes = require("./routes/api/prompts");
 const imageRoutes = require("./routes/api/images");
+const voiceRoutes = require("./routes/api/voice");
 const mcpRouter = require("./mcp");
 
 const app = express();
@@ -48,7 +49,9 @@ app.use(mcpRouter);
 // Only the frontend may call the API from a browser (see config/cors.js).
 app.use(cors(buildCorsOptions()));
 
-// Express internal parser middleware
+// Express internal parser middleware. Voice recordings arrive as base64
+// JSON, so that route gets a larger limit than the default 100 kB.
+app.use("/api/voice", express.json({ limit: "15mb" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -62,6 +65,7 @@ app.use("/api/stories", storyRoutes);
 app.use("/api/contents", contentRoutes);
 app.use("/api/prompts", promptRoutes);
 app.use("/api/images", imageRoutes);
+app.use("/api/voice", voiceRoutes);
 
 // Use error logging/handling middleware
 app.use(errorLogger); // Log errors

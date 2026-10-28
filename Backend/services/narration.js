@@ -55,9 +55,16 @@ const isEnabled = () => Boolean(process.env.ELEVENLABS_API_KEY);
 
 const modelId = () => process.env.ELEVENLABS_MODEL || "eleven_multilingual_v2";
 
+// "mine" is the user's own cloned voice (see services/voiceClone.js).
+const OWN_VOICE = "mine";
+
 const presetNames = () => Object.keys(PRESET_VOICES);
 
-const resolveVoiceId = (voice) => {
+const voiceNames = () => [...presetNames(), OWN_VOICE];
+
+// `user` is only needed for the cloned voice.
+const resolveVoiceId = (voice, user) => {
+  if (voice === OWN_VOICE) return user?.clonedVoice?.voiceId || null;
   const preset = PRESET_VOICES[voice];
   if (!preset) return null;
   return process.env[preset.envVar] || preset.defaultId;
@@ -123,13 +130,29 @@ const splitText = (text, maxChars = MAX_CHUNK_CHARS) => {
 
 const hashText = (text) => crypto.createHash("sha256").update(text).digest("hex");
 
-const elevenLabsError = async (response) => {
+const elevenLabsError = async (
+  response,
+  failure = "Die Geschichte konnte nicht vorgelesen werden",
+) => {
   let detail = "";
   try {
     const body = await response.json();
     detail = body?.detail?.status || body?.detail?.message || "";
   } catch {
     // Not JSON; the status code is enough.
+  }
+
+  if (detail === "voice_limit_reached") {
+    return new NarrationError(
+      "Im ElevenLabs-Konto ist kein Platz mehr für neue Stimmen.",
+      503,
+    );
+  }
+  if (/instant_voice_cloning|can_not_use/i.test(detail)) {
+    return new NarrationError(
+      "Stimmen-Klonen ist für dieses ElevenLabs-Konto nicht freigeschaltet.",
+      503,
+    );
   }
 
   // ElevenLabs reports an empty quota as a 401, so check that first.
@@ -149,7 +172,7 @@ const elevenLabsError = async (response) => {
     );
   }
   return new NarrationError(
-    `Die Geschichte konnte nicht vorgelesen werden (ElevenLabs ${response.status}${
+    `${failure} (ElevenLabs ${response.status}${
       detail ? `: ${detail}` : ""
     }).`,
     502,
@@ -205,8 +228,8 @@ const cacheKey = ({ storyId = null, voiceId, text }) => ({
 });
 
 // Checks the request and returns the text and voice to record, or throws.
-const prepare = ({ story, voice, maxChars = MAX_NARRATION_CHARS }) => {
-  const voiceId = resolveVoiceId(voice);
+const prepare = ({ story, voice, user, maxChars = MAX_NARRATION_CHARS }) => {
+  const voiceId = resolveVoiceId(voice, user);
   if (!voiceId) throw new NarrationError("Unbekannte Stimme.", 400);
 
   const text = buildNarrationText(story);
@@ -247,10 +270,10 @@ const loadOrRecord = async ({ key, text, userId, expiresAt }) => {
   return inFlight.get(flightKey);
 };
 
-// Returns { mimeType, data } for a saved story read by `voice` ("female"
-// or "male"), from the cache when it was made before.
-const getNarration = async ({ story, voice }) => {
-  const { voiceId, text } = prepare({ story, voice });
+// Returns { mimeType, data } for a saved story read by `voice` ("female",
+// "male" or "mine"), from the cache when it was made before.
+const getNarration = async ({ story, voice, user }) => {
+  const { voiceId, text } = prepare({ story, voice, user });
   return loadOrRecord({
     key: cacheKey({ storyId: story._id, voiceId, text }),
     text,
@@ -281,8 +304,8 @@ const guestStory = ({ title, text }) => ({
 
 // True when the recording is already stored, so serving it costs nothing.
 // Pass `story` for a saved story, or `title` and `text` for a guest one.
-const hasCachedNarration = async ({ story, title, text, voice }) => {
-  const voiceId = resolveVoiceId(voice);
+const hasCachedNarration = async ({ story, title, text, voice, user }) => {
+  const voiceId = resolveVoiceId(voice, user);
   if (!voiceId) return false;
   const narrationText = buildNarrationText(story || guestStory({ title, text }));
   return Boolean(
@@ -294,17 +317,28 @@ const hasCachedNarration = async ({ story, title, text, voice }) => {
 
 const deleteStoryAudio = (storyId) => StoryAudio.deleteMany({ storyId });
 
+// Removes every recording made with one voice, e.g. a deleted cloned voice.
+const deleteVoiceAudio = (voiceId) => StoryAudio.deleteMany({ voiceId });
+
 module.exports = {
   NarrationError,
   MAX_NARRATION_CHARS,
   MAX_GUEST_NARRATION_CHARS,
+  OWN_VOICE,
+  ELEVENLABS_BASE_URL,
   isEnabled,
   presetNames,
+  voiceNames,
   resolveVoiceId,
   buildNarrationText,
   splitText,
+  synthesize,
+  prepare,
   getNarration,
   getGuestNarration,
+  guestStory,
   hasCachedNarration,
   deleteStoryAudio,
+  deleteVoiceAudio,
+  elevenLabsError,
 };

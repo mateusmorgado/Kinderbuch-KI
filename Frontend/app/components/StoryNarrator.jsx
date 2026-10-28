@@ -1,34 +1,39 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { fetchNarration } from "../utils/stories";
+import { getVoice } from "../utils/voice";
 import { useLanguagePreference } from "./ExperienceControls";
 
 const TEXT = {
   de: {
     heading: "Vorlesen lassen",
-    voices: { female: "Erzählerin", male: "Erzähler" },
+    voices: { female: "Erzählerin", male: "Erzähler", mine: "Meine Stimme" },
+    recordOwn: "Mit deiner eigenen Stimme vorlesen? Nimm sie hier auf →",
     chooseVoice: "Stimme wählen",
     play: "Vorlesen",
     loading: "Die Stimme macht sich bereit …",
     loadingHint: "Beim ersten Mal dauert das ein paar Sekunden.",
-    player: (voice) => `Die Geschichte, vorgelesen von der ${voice}`,
+    player: (voice) => `Die Geschichte, vorgelesen: ${voice}`,
   },
   en: {
     heading: "Read it to me",
-    voices: { female: "Female voice", male: "Male voice" },
+    voices: { female: "Female voice", male: "Male voice", mine: "My voice" },
+    recordOwn: "Want it read in your own voice? Record it here →",
     chooseVoice: "Choose a voice",
     play: "Read aloud",
     loading: "The voice is getting ready …",
     loadingHint: "The first time takes a few seconds.",
-    player: (voice) => `The story, read by the ${voice.toLowerCase()}`,
+    player: (voice) => `The story, read aloud: ${voice}`,
   },
 };
 
-const VOICES = ["female", "male"];
+const PRESET_VOICES = ["female", "male"];
 
-// Lets the story be read aloud by a female or male ElevenLabs voice. Pass
-// `storyId` for a saved story, or `title` and `text` for a guest's unsaved
-// one. Each recording is fetched once per page visit and kept as a blob URL.
+// Lets the story be read aloud by a female or male ElevenLabs voice, or by
+// the user's own cloned voice. Pass `storyId` for a saved story, or `title`
+// and `text` for a guest's unsaved one. Each recording is fetched once per
+// page visit and kept as a blob URL.
 export default function StoryNarrator({ storyId, title, text }) {
   const [language] = useLanguagePreference();
   const t = TEXT[language] || TEXT.de;
@@ -37,9 +42,27 @@ export default function StoryNarrator({ storyId, title, text }) {
   const [audioUrl, setAudioUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Guests have no saved voice; they get a link to try one instead.
+  const [ownVoice, setOwnVoice] = useState(storyId ? undefined : null);
   const urls = useRef({});
   const request = useRef(null);
   const audioRef = useRef(null);
+
+  // Offer "My voice" once we know the user has recorded one.
+  useEffect(() => {
+    if (!storyId) return undefined;
+    let active = true;
+    getVoice()
+      .then(({ voice: own }) => active && setOwnVoice(own))
+      .catch(() => active && setOwnVoice(null));
+    return () => {
+      active = false;
+    };
+  }, [storyId]);
+
+  const voices = ownVoice ? [...PRESET_VOICES, "mine"] : PRESET_VOICES;
+  const voiceLabel = (option) =>
+    option === "mine" ? ownVoice?.name || t.voices.mine : t.voices[option];
 
   // Free the recordings and stop a running request when leaving the page.
   useEffect(() => {
@@ -103,9 +126,9 @@ export default function StoryNarrator({ storyId, title, text }) {
         <div
           role="radiogroup"
           aria-label={t.chooseVoice}
-          className="flex rounded-full bg-white/80 p-1 ring-2 ring-black/10 night:bg-white/10 night:ring-white/15"
+          className="flex flex-wrap rounded-full bg-white/80 p-1 ring-2 ring-black/10 night:bg-white/10 night:ring-white/15"
         >
-          {VOICES.map((option) => (
+          {voices.map((option) => (
             <button
               key={option}
               type="button"
@@ -118,7 +141,7 @@ export default function StoryNarrator({ storyId, title, text }) {
                   : "text-[#6d5b4d] hover:bg-[#f7c898]/40 night:text-[#e3d7fa] night:hover:bg-white/10"
               }`}
             >
-              {t.voices[option]}
+              {voiceLabel(option)}
             </button>
           ))}
         </div>
@@ -152,9 +175,18 @@ export default function StoryNarrator({ storyId, title, text }) {
           key={audioUrl}
           src={audioUrl}
           controls
-          aria-label={t.player(t.voices[voice])}
+          aria-label={t.player(voiceLabel(voice))}
           className="mt-4 w-full"
         />
+      )}
+
+      {ownVoice === null && (
+        <Link
+          href="/voice"
+          className="mt-3 inline-block text-sm font-bold text-[#b85c3d] underline-offset-4 hover:underline night:text-[#f4a77f]"
+        >
+          🎙️ {t.recordOwn}
+        </Link>
       )}
 
       {error && (
