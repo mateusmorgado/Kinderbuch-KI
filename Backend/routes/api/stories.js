@@ -148,7 +148,8 @@ router.get(
 
     try {
       const audio = await narration.getNarration({ story: req.story, voice });
-      const data = audio.data.buffer ? Buffer.from(audio.data.buffer) : audio.data;
+      // A fresh recording is a Buffer; one loaded from MongoDB is a Binary.
+      const data = Buffer.isBuffer(audio.data) ? audio.data : Buffer.from(audio.data.buffer);
 
       logger.info(
         `Narration of story ${req.story._id} (${voice}) ${audio.cached ? "served from cache" : "recorded"}`,
