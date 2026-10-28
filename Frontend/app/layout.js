@@ -16,10 +16,10 @@ const Roca2 = LocalFont({
 });
 
 export const metadata = {
-  title: "MellowDreams",
+  title: "Kinderbuch",
   description: "Moderne Technologie für aktive Erzähler",
   icons: {
-    icon: [{ url: "/M.svg", type: "image/svg+xml" }],
+    icon: [{ url: "/K.svg", type: "image/svg+xml" }],
   },
 };
 

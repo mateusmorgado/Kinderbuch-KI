@@ -69,12 +69,12 @@ export default function Home() {
         <div className="flex flex-col min-h-full justify-between pt-8 pb-[max(2rem,env(safe-area-inset-bottom))] px-2 items-center text-center">
           <div className="w-full sm:px-0">
             <Image
-              src="/mellow.svg"
-              alt="MellowDreams"
+              src="/kinderbuch.svg"
+              alt="Kinderbuch"
               width={420}
               height={200}
               priority
-              className="m-8 w-[330px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert"
+              className="m-8 w-[300px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert night:hue-rotate-180"
             />
           </div>
           <div className="mx-64"></div>

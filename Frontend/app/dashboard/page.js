@@ -67,12 +67,12 @@ export default function Dashboard() {
       <div className="flex flex-col min-h-full justify-between items-center pb-[env(safe-area-inset-bottom)] text-center">
         <div className="w-full px-4 py-6 sm:px-0">
           <Image
-            src="/mellow.svg"
-            alt="MellowDreams"
+            src="/kinderbuch.svg"
+            alt="Kinderbuch"
             width={350}
             height={200}
             priority
-            className="m-8 w-[330px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert"
+            className="m-8 w-[300px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert night:hue-rotate-180"
           />
         </div>
 
