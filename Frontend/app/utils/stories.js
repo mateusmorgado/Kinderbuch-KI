@@ -123,3 +123,29 @@ export async function deleteStory(storyId) {
     throw new Error(data.error || "Geschichte konnte nicht gelöscht werden!");
   }
 }
+
+// The story read aloud by "female" or "male". Resolves with an MP3 Blob.
+// A saved story is passed as `storyId`; a guest's unsaved story as `title`
+// and `text`. The first time takes a while because the voice is recorded then.
+export async function fetchNarration({ storyId, title, text, voice, signal }) {
+  const res = storyId
+    ? await fetch(
+        `${API_BASE_URL}/api/stories/${storyId}/narration?voice=${encodeURIComponent(voice)}`,
+        { headers: authHeaders(), signal },
+      )
+    : await fetch(`${API_BASE_URL}/api/contents/narrate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ title, text, voice }),
+        signal,
+      });
+  if (storyId && isAuthError(res.status)) {
+    handleExpiredSession();
+    throw new Error("Sitzung abgelaufen, bitte erneut einloggen.");
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Die Geschichte konnte nicht vorgelesen werden.");
+  }
+  return res.blob();
+}

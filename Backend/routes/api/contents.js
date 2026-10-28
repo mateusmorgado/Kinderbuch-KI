@@ -1,10 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const optionalAuth = require("../../middleware/optionalAuth");
-const { storyLimiter, imageLimiter } = require("../../middleware/rateLimit");
+const {
+  storyLimiter,
+  imageLimiter,
+  guestNarrationLimiter,
+} = require("../../middleware/rateLimit");
 const { logger } = require("../../middleware/logging");
 const { saveImageToStory } = require("../../services/stories");
 const gemini = require("../../services/gemini");
+const narration = require("../../services/narration");
 
 require("dotenv").config();
 
@@ -187,5 +192,44 @@ router.post("/generate-image", optionalAuth, imageLimiter, async (req, res, next
     next(error);
   }
 });
+
+// Only new recordings count against the guest limit.
+const limitNewGuestNarrations = async (req, res, next) => {
+  try {
+    const { title, text, voice } = req.body || {};
+    if (await narration.hasCachedNarration({ title, text, voice })) return next();
+  } catch (error) {
+    return next(error);
+  }
+  guestNarrationLimiter(req, res, next);
+};
+
+// Reads an unsaved story aloud, so guests can try it without an account.
+// Body: { title, text, voice: "female" | "male" }. Saved stories use
+// GET /api/stories/:id/narration instead.
+router.post(
+  "/narrate",
+  optionalAuth,
+  limitNewGuestNarrations,
+  async (req, res, next) => {
+    const { title, text, voice } = req.body || {};
+    if (!narration.presetNames().includes(voice)) {
+      return res.status(400).json({ error: "Unknown voice." });
+    }
+
+    try {
+      const audio = await narration.getGuestNarration({ title, text, voice });
+      const data = Buffer.isBuffer(audio.data) ? audio.data : Buffer.from(audio.data.buffer);
+      logger.info(`Guest narration (${voice}) ${audio.cached ? "served from cache" : "recorded"}`);
+      res.set({ "Content-Type": audio.mimeType, "Cache-Control": "private, no-store" });
+      res.send(data);
+    } catch (error) {
+      if (error instanceof narration.NarrationError) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      next(error);
+    }
+  },
+);
 
 module.exports = router;
