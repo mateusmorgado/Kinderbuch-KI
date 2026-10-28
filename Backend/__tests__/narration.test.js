@@ -25,6 +25,13 @@ let otherToken;
 const realFetch = global.fetch;
 const fakeMp3 = Buffer.from("ID3-fake-mp3-bytes");
 
+// Collects a binary response body into a Buffer.
+const binaryParser = (res, callback) => {
+  const chunks = [];
+  res.on("data", (chunk) => chunks.push(chunk));
+  res.on("end", () => callback(null, Buffer.concat(chunks)));
+};
+
 const mp3Response = () => ({
   ok: true,
   status: 200,
@@ -71,10 +78,11 @@ describe("story narration", () => {
     const first = await request(app)
       .get(`/api/stories/${id}/narration?voice=female`)
       .set(auth())
-      .responseType("blob")
+      .buffer(true)
+      .parse(binaryParser)
       .expect(200)
       .expect("Content-Type", "audio/mpeg");
-    expect(Buffer.from(first.body).equals(fakeMp3)).toBe(true);
+    expect(first.body.equals(fakeMp3)).toBe(true);
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     const [url, options] = global.fetch.mock.calls[0];
