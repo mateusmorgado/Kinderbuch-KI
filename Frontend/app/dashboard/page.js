@@ -6,6 +6,7 @@ import Image from "next/image";
 import { clearSession, getToken } from "../utils/auth";
 import LoadingSpGeneric from "../components/LoadingSpinner";
 import ConnectAssistants from "../components/ConnectAssistants";
+import FeaturesOverview from "../components/FeaturesOverview";
 import ExperienceControls, {
   useLanguagePreference,
 } from "../components/ExperienceControls";
@@ -99,6 +100,7 @@ export default function Dashboard() {
           <Button variant="secondary" className="min-w-74" href="/voice">
             {isGerman ? "Meine Vorlesestimme" : "My reading voice"} 🎙️
           </Button>
+          <FeaturesOverview className="min-w-74" />
           <Button variant="tertiary" onClick={handleLogout}>
             Logout
           </Button>
