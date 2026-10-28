@@ -113,12 +113,25 @@ const loadOwnedStory = async (req, res, next) => {
   }
 };
 
+// The own (cloned) voice needs the user's voice id.
+const loadNarrator = async (req, res, next) => {
+  try {
+    if (req.query.voice === narration.OWN_VOICE) {
+      req.narrator = await User.findById(req.user.id).lean();
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Only new recordings count against the narration limit.
 const limitNewNarrations = async (req, res, next) => {
   try {
     const cached = await narration.hasCachedNarration({
       story: req.story,
       voice: req.query.voice,
+      user: req.narrator,
     });
     if (cached) return next();
   } catch (error) {
@@ -127,22 +140,30 @@ const limitNewNarrations = async (req, res, next) => {
   narrationLimiter(req, res, next);
 };
 
-// The story read aloud as MP3 (only the owner). `voice` is "female" or
-// "male". The first request records it with ElevenLabs, later ones are
+// The story read aloud as MP3 (only the owner). `voice` is "female",
+// "male" or "mine" (the user's cloned voice). The first request records it with ElevenLabs, later ones are
 // served from the database.
 router.get(
   "/:id/narration",
   authMiddleware,
   loadOwnedStory,
+  loadNarrator,
   limitNewNarrations,
   async (req, res, next) => {
     const voice = req.query.voice;
-    if (!narration.presetNames().includes(voice)) {
+    if (!narration.voiceNames().includes(voice)) {
       return res.status(400).json({ error: "Unknown voice." });
+    }
+    if (voice === narration.OWN_VOICE && !req.narrator?.clonedVoice) {
+      return res.status(404).json({ error: "Du hast noch keine eigene Stimme aufgenommen." });
     }
 
     try {
-      const audio = await narration.getNarration({ story: req.story, voice });
+      const audio = await narration.getNarration({
+        story: req.story,
+        voice,
+        user: req.narrator,
+      });
       // A fresh recording is a Buffer; one loaded from MongoDB is a Binary.
       const data = Buffer.isBuffer(audio.data) ? audio.data : Buffer.from(audio.data.buffer);
 

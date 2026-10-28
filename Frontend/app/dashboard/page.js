@@ -95,6 +95,9 @@ export default function Dashboard() {
         <Button variant="secondary" className="min-w-74" href="/mystories">
           {isGerman ? "Meine Geschichten" : "My stories"} 📚
         </Button>
+        <Button variant="secondary" className="min-w-74" href="/voice">
+          {isGerman ? "Meine Vorlesestimme" : "My reading voice"} 🎙️
+        </Button>
         <Button variant="tertiary" onClick={handleLogout}>
           Logout
         </Button>

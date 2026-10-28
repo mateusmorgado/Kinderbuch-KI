@@ -28,6 +28,20 @@ const UserSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // A voice cloned from the user's own recording with ElevenLabs, used to
+    // read their stories aloud. Only stored after the user confirmed consent.
+    clonedVoice: {
+      type: new mongoose.Schema(
+        {
+          voiceId: { type: String, required: true },
+          name: { type: String, default: '' },
+          consentAt: { type: Date, required: true },
+          consentVersion: { type: String, required: true },
+        },
+        { _id: false, timestamps: true }
+      ),
+      default: undefined,
+    },
     createdStories: [
       {
         type: mongoose.Schema.Types.ObjectId,
