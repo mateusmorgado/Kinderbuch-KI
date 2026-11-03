@@ -1,6 +1,5 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import Button from "./Button";
 import { useLanguagePreference } from "./ExperienceControls";
 
 const FEATURES = [
@@ -156,7 +155,7 @@ function FeaturesDialog({ language, onClose }) {
   );
 }
 
-// "Features" button that opens an overview of everything the app can do.
+// Quiet footer link that opens an overview of everything the app can do.
 export default function FeaturesOverview({ className = "" }) {
   const [language] = useLanguagePreference();
   const t = TEXT[language] || TEXT.de;
@@ -165,14 +164,14 @@ export default function FeaturesOverview({ className = "" }) {
 
   return (
     <>
-      <Button
-        variant="quaternary"
-        className={className}
+      <button
+        type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
+        className={`text-xs font-bold uppercase tracking-widest opacity-70 transition-opacity hover:opacity-100 hover:underline hover:underline-offset-2 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-1 ${className}`}
       >
-        {t.button} ✨
-      </Button>
+        ✨ {t.button}
+      </button>
       {open && <FeaturesDialog language={language} onClose={close} />}
     </>
   );
