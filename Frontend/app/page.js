@@ -7,6 +7,7 @@ import ExperienceControls, {
 } from "./components/ExperienceControls";
 import Image from "next/image";
 import { getToken } from "./utils/auth";
+import FeaturesOverview from "./components/FeaturesOverview";
 
 const contributors = [
   { name: "Mateus Morgado", href: "https://github.com/mateusmorgado" },
@@ -95,6 +96,7 @@ export default function Home() {
             <Button variant="glow" className="w-60" href="/generate">
               {isGerman ? "Experiment starten" : "Start experiment"}
             </Button>
+            <FeaturesOverview className="w-60" />
           </div>
 
           <footer className="mt-6 max-w-3xl pb-2 text-xs font-bold">
