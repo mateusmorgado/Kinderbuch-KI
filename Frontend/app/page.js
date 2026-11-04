@@ -96,10 +96,11 @@ export default function Home() {
             <Button variant="glow" className="w-60" href="/generate">
               {isGerman ? "Experiment starten" : "Start experiment"}
             </Button>
-            <FeaturesOverview className="w-60" />
           </div>
 
           <footer className="mt-6 max-w-3xl pb-2 text-xs font-bold">
+            <FeaturesOverview />
+            <hr className="mx-auto my-3 w-24 border-t-2 border-current opacity-20" />
             <p className="mb-1 uppercase tracking-widest opacity-70">
               {isGerman ? "Mitwirkende" : "Contributors"}
             </p>

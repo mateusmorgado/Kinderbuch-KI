@@ -65,51 +65,64 @@ export default function Dashboard() {
       <div className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-20">
         <ExperienceControls />
       </div>
-      <div className="flex flex-col min-h-full justify-between items-center pb-[env(safe-area-inset-bottom)] text-center">
-        <div className="w-full px-4 py-6 sm:px-0">
+      <div className="flex flex-col min-h-full items-center px-4 pt-[max(4.5rem,calc(env(safe-area-inset-top)+3.5rem))] pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center">
+        <main className="flex w-full flex-1 flex-col items-center justify-center">
           <Image
             src="/kinderbuch.svg"
             alt="Kinderbuch"
             width={350}
             height={200}
             priority
-            className="m-8 w-[300px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert night:hue-rotate-180"
+            className="w-[260px] sm:w-[390px] xl:w-[500px] h-auto mx-auto mb-8 sm:mb-12 night:invert night:hue-rotate-180"
           />
-        </div>
 
-        <div className="text-3xl font-black max-w-[20rem] xl:max-w-none mx-auto mb-12">
-          {firstName
-            ? firstName.charAt(0).toUpperCase() + firstName.slice(1)
-            : isGerman
-              ? "Hallo"
-              : "Hello"}
-          ,
-          <br />
-          {isGerman
-            ? "willkommen zu deiner zauberhaften Bibliothek!"
-            : "welcome to your magical library!"}
-        </div>
+          <h1 className="text-2xl sm:text-3xl font-black max-w-[18rem] sm:max-w-md mx-auto mb-8 sm:mb-10 leading-tight">
+            {firstName
+              ? firstName.charAt(0).toUpperCase() + firstName.slice(1)
+              : isGerman
+                ? "Hallo"
+                : "Hello"}
+            ,
+            <br />
+            {isGerman
+              ? "willkommen zu deiner zauberhaften Bibliothek!"
+              : "welcome to your magical library!"}
+          </h1>
 
-        <div className="font-black grid grid-cols-1 gap-6 justify-items-center mb-8  ">
-          <Button variant="primary" className="min-w-74" href="/generate">
-            {isGerman ? "Erstelle eine Geschichte" : "Create a story"} 📝
-          </Button>
-          <Button variant="secondary" className="min-w-74" href="/mystories">
-            {isGerman ? "Meine Geschichten" : "My stories"} 📚
-          </Button>
-          <Button variant="secondary" className="min-w-74" href="/voice">
-            {isGerman ? "Meine Vorlesestimme" : "My reading voice"} 🎙️
-          </Button>
-          <FeaturesOverview className="min-w-74" />
-          <Button variant="tertiary" onClick={handleLogout}>
-            Logout
-          </Button>
-        </div>
+          <div className="w-full max-w-[19rem] font-black grid grid-cols-1 gap-4 mb-10">
+            <Button variant="primary" className="w-full" href="/generate">
+              {isGerman ? "Erstelle eine Geschichte" : "Create a story"} 📝
+            </Button>
+            <Button variant="secondary" className="w-full" href="/mystories">
+              {isGerman ? "Meine Geschichten" : "My stories"} 📚
+            </Button>
+            <Button variant="secondary" className="w-full" href="/voice">
+              {isGerman ? "Meine Vorlesestimme" : "My reading voice"} 🎙️
+            </Button>
+          </div>
 
-        <ConnectAssistants />
+          <ConnectAssistants />
+        </main>
+
+        <footer className="mt-6 flex flex-col items-center text-xs font-bold">
+          <hr className="mb-3 w-24 border-t-2 border-current opacity-20" />
+          <div className="flex items-center gap-3">
+            <FeaturesOverview />
+            <span aria-hidden="true" className="opacity-50">
+              ·
+            </span>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="uppercase tracking-widest opacity-70 transition-opacity hover:opacity-100 hover:underline hover:underline-offset-2 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-1"
+            >
+              Logout
+            </button>
+          </div>
+        </footer>
       </div>
 
-      <div className="fixed right-0 bottom-3/5 md:bottom-1/5 block slide-in-rl">
+      <div className="fixed right-0 bottom-1/5 hidden md:block slide-in-rl">
         <Image
           src="/kids/girl.png"
           alt=""
@@ -119,7 +132,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="fixed -left-5 top-1/5 md:top-2/7 xl:top-2/5 block slide-in-lr">
+      <div className="fixed -left-5 top-2/7 xl:top-2/5 hidden md:block slide-in-lr">
         <Image
           src="/misc/boy-mag.png"
           alt=""
