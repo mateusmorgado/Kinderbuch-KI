@@ -56,6 +56,21 @@ html[data-theme="night"] .site-background {
   }
 }
 
+/* The landing-page dragon hovers gently, like it is flying. */
+.dragon-float {
+  animation: dragon-float 4s ease-in-out 2s infinite;
+}
+
+@keyframes dragon-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(-2deg);
+  }
+}
+
 @keyframes slideIn-bt {
   from {
     transform: translateY(100%);
@@ -181,7 +196,8 @@ html[data-theme="night"] .site-background {
   .ink-in,
   .slide-in-lr,
   .slide-in-rl,
-  .slide-in-bt {
+  .slide-in-bt,
+  .dragon-float {
     animation: none;
   }
 

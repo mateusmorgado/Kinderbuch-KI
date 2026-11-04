@@ -57,13 +57,13 @@ export default function Home() {
           className=" md:w-[140px] xl:w-[160px] "
         />
       </div>
-      <div className="fixed -right-15 top-1/3 md:top-1/4 -translate-y-1/2 block slide-in-rl">
+      <div className="fixed right-0 top-[25%] md:right-4 md:top-1/4 -translate-y-1/2 block slide-in-rl">
         <Image
-          src="/misc/lion-mag.png"
+          src="/misc/dragon.webp"
           alt=""
-          width={180}
-          height={220}
-          className=" md:w-[260px] xl:w-[280px]"
+          width={118}
+          height={103}
+          className="dragon-float md:w-[260px] xl:w-[300px]"
         />
       </div>
       <div className="h-full overflow-y-auto">
@@ -80,7 +80,7 @@ export default function Home() {
           </div>
           <div className="mx-64"></div>
 
-          <div className="text-3xl font-black max-w-[14rem] sm:max-w-none mx-auto">
+          <div className="relative z-10 text-3xl font-black max-w-[14rem] sm:max-w-none mx-auto">
             {isGerman
               ? "Wo Träume zu Geschichten werden"
               : "Where dreams become stories"}
