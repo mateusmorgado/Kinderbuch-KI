@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import Button from "../components/Button";
 import InputField from "../components/InputField";
@@ -89,14 +90,12 @@ export default function Register() {
       onSubmit={handleSubmit}
       header={
         <div className="flex items-center justify-between gap-4">
-          <Button
-            type="button"
-            variant="tertiary"
-            className="min-h-11 px-0 text-base shadow-none"
-            onClick={() => router.push("/")}
+          <Link
+            href="/"
+            className="flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-base font-bold shadow-md ring-2 ring-black/10 transition hover:scale-105 hover:bg-white focus:outline-none focus:ring-4 focus:ring-pink-300 night:bg-white/10 night:ring-white/20 night:hover:bg-white/20"
           >
             <span aria-hidden="true">←</span> {t.home}
-          </Button>
+          </Link>
           <ExperienceControls />
         </div>
       }

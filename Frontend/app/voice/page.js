@@ -260,7 +260,11 @@ export default function VoicePage() {
         setConsentVersion(data.consentVersion);
         setShowForm(!data.voice);
       })
-      .catch(() => toast.error(t.loadFailed))
+      .catch(() => {
+        // The saved language may not have reached React state yet.
+        const saved = TEXT[window.localStorage.getItem("language")] || t;
+        toast.error(saved.loadFailed, { id: "voice-load" });
+      })
       .finally(() => setIsLoading(false));
     // Only on the first visit; the language can change without a reload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
