@@ -46,40 +46,6 @@ export function useReducedMotion() {
   return reduced;
 }
 
-// Counts up to a number when it scrolls into view.
-export function CountUp({ value, suffix = "" }) {
-  const [ref, inView] = useInView({ threshold: 0.6 });
-  const reduced = useReducedMotion();
-  const [shown, setShown] = useState(0);
-
-  useEffect(() => {
-    if (!inView) return;
-    if (reduced) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setShown(value);
-      return;
-    }
-    const start = performance.now();
-    const duration = 1200;
-    let frame;
-    const tick = (now) => {
-      const progress = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setShown(Math.round(value * eased));
-      if (progress < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [inView, reduced, value]);
-
-  return (
-    <span ref={ref} className="tabular-nums">
-      {shown}
-      {suffix}
-    </span>
-  );
-}
-
 const pick = (text, language) => text[language] ?? text.de;
 
 const SAMPLE_STORY = {
@@ -87,8 +53,7 @@ const SAMPLE_STORY = {
   en: "Once upon a time there was a little dragon called Spark who was afraid of the dark. Every night he counted the stars, until one evening a firefly tapped on his window. “Come with me,” it whispered, “the night is full of lights, you only have to look.” And Spark flew off.",
 };
 
-// Story text appearing word by word, next to the NDJSON events the
-// backend actually relays from Gemini.
+// Story text appearing word by word, like the real streaming endpoint.
 export function StreamingDemo() {
   const [language] = useLanguagePreference();
   const [ref, inView] = useInView();
@@ -115,50 +80,27 @@ export function StreamingDemo() {
   }, [inView, reduced, run, words.length]);
 
   const done = count >= words.length;
-  const chunks = [];
-  for (let i = 0; i < Math.min(count, words.length); i += 4) {
-    chunks.push(words.slice(i, Math.min(i + 4, count)).join(" "));
-  }
-  const events = chunks.map((chunk, index) => ({
-    id: index,
-    line: `{"type":"text","text":"${chunk.slice(0, 26)}${chunk.length > 26 ? "…" : ""}"}`,
-  }));
-  if (done) events.push({ id: "done", line: '{"type":"done","storyId":"6731f…"}' });
 
   return (
-    <div ref={ref} className="grid grid-cols-1 gap-3 md:grid-cols-[1.25fr_1fr]">
-      <div className="min-h-[11.5rem] min-w-0 rounded-2xl bg-white/80 p-4 text-[0.95rem] leading-relaxed shadow-inner night:bg-black/20">
-        {words.slice(0, count).map((word, index) => (
-          <span key={`${run}-${index}`} className="ink-in">
-            {word}{" "}
-          </span>
-        ))}
-        {!done && <span className="quill-cursor">✒️</span>}
-      </div>
-      <div className="flex min-h-[11.5rem] min-w-0 flex-col rounded-2xl bg-[#1d1830] p-3 font-mono text-[0.7rem] leading-relaxed text-[#c9f7d4] shadow-inner night:ring-1 night:ring-white/15">
-        <div className="mb-2 flex items-center gap-1.5 text-[0.65rem] text-white/50">
-          <span className="h-2 w-2 rounded-full bg-[#ff5f57]" />
-          <span className="h-2 w-2 rounded-full bg-[#febc2e]" />
-          <span className="h-2 w-2 rounded-full bg-[#28c840]" />
-          <span className="ml-2 truncate">POST /api/contents/generate-stream</span>
-        </div>
-        <div className="flex-1 space-y-0.5 overflow-hidden">
-          {events.slice(-5).map(({ id, line }) => (
-            <div key={`${run}-${id}`} className="ink-in truncate">
-              <span className="text-white/40">› </span>
-              {line}
-            </div>
-          ))}
-        </div>
+    <div
+      ref={ref}
+      className="relative min-h-[13rem] rounded-2xl bg-white/70 p-4 pb-10 text-[0.95rem] leading-relaxed night:bg-black/20"
+    >
+      {words.slice(0, count).map((word, index) => (
+        <span key={`${run}-${index}`} className="ink-in">
+          {word}{" "}
+        </span>
+      ))}
+      {!done && <span className="quill-cursor">✒️</span>}
+      {done && (
         <button
           type="button"
           onClick={() => setRun((value) => value + 1)}
-          disabled={!done}
-          className="mt-2 self-end rounded-full px-3 py-1 font-sans text-xs font-bold text-white ring-1 ring-white/30 transition hover:bg-white/10 disabled:opacity-30"
+          className="absolute bottom-2 right-2 rounded-full px-3 py-1 text-xs font-bold opacity-70 ring-1 ring-current/30 transition hover:opacity-100"
         >
           ↻ {language === "en" ? "Replay" : "Nochmal"}
         </button>
-      </div>
+      )}
     </div>
   );
 }
@@ -197,7 +139,7 @@ export function IllustrationDemo() {
       type="button"
       onClick={() => done && setRun((value) => value + 1)}
       aria-label={language === "en" ? "Paint the picture again" : "Bild nochmal malen"}
-      className="relative block aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[image:var(--curiosity)] shadow-inner"
+      className="relative block aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[image:var(--curiosity)] "
     >
       <Image
         src="/misc/dragon.webp"
@@ -244,7 +186,7 @@ export function NarrationDemo() {
     <div>
       <div
         aria-hidden="true"
-        className="flex h-24 items-center justify-center gap-[3px] rounded-2xl bg-white/80 px-3 shadow-inner night:bg-black/20"
+        className="flex h-24 items-center justify-center gap-[3px] rounded-2xl bg-white/80 px-3  night:bg-black/20"
       >
         {Array.from({ length: bars }, (_, index) => (
           <span
@@ -277,58 +219,6 @@ export function NarrationDemo() {
         ))}
       </div>
     </div>
-  );
-}
-
-const CLONE_STEPS = [
-  { icon: "🎙️", label: { de: "Aufnehmen", en: "Record" } },
-  { icon: "🧬", label: { de: "Klonen", en: "Clone" } },
-  { icon: "📖", label: { de: "Vorlesen", en: "Narrate" } },
-  { icon: "🗑️", label: { de: "Löschen", en: "Delete" } },
-];
-
-// The voice-cloning flow, stepping through record → clone → narrate → delete.
-export function VoiceCloneDemo() {
-  const [language] = useLanguagePreference();
-  const [ref, inView] = useInView();
-  const reduced = useReducedMotion();
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    if (!inView || reduced) return;
-    const timer = setInterval(
-      () => setStep((value) => (value + 1) % CLONE_STEPS.length),
-      1500,
-    );
-    return () => clearInterval(timer);
-  }, [inView, reduced]);
-
-  return (
-    <ol ref={ref} className="grid grid-cols-4 gap-2">
-      {CLONE_STEPS.map((item, index) => {
-        const active = index === step;
-        const past = index < step;
-        return (
-          <li key={item.icon} className="flex flex-col items-center gap-2 text-center">
-            <span
-              className={`relative flex h-14 w-14 items-center justify-center rounded-full text-2xl transition duration-500 ${
-                active
-                  ? "scale-110 bg-[image:var(--adventure)] shadow-lg"
-                  : past
-                    ? "bg-[image:var(--calm)]"
-                    : "bg-black/5 grayscale night:bg-white/10"
-              }`}
-            >
-              {active && <span aria-hidden="true" className="pulse-ring absolute inset-0 rounded-full" />}
-              <span aria-hidden="true">{item.icon}</span>
-            </span>
-            <span className={`text-xs font-black transition ${active ? "opacity-100" : "opacity-60"}`}>
-              {pick(item.label, language)}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
   );
 }
 
@@ -371,7 +261,7 @@ export function McpDemo() {
     );
 
   return (
-    <div ref={ref} className="flex min-h-[13.5rem] flex-col gap-2 rounded-2xl bg-white/80 p-3 text-sm shadow-inner night:bg-black/20">
+    <div ref={ref} className="flex min-h-[13.5rem] flex-col gap-2 rounded-2xl bg-white/80 p-3 text-sm  night:bg-black/20">
       {stage >= 1 && (
         <div className="ink-in max-w-[85%] self-end rounded-2xl rounded-br-md bg-[#2c2c2c] px-3 py-2 text-white night:bg-white night:text-[#221d33]">
           {text.ask}
