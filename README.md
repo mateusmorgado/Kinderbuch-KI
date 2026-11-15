@@ -1,174 +1,124 @@
-# Kinderbuch-KI
+# Kinderbuch
 
-<p align="center">
-  <img src="./ki.gif" alt="Kinderbuch-KI Demo" width="150">
+**Type one sentence and get an illustrated children's story, read aloud, even in your own voice.**
+
+Kinderbuch ("children's book" in German) is a full-stack AI web app: Gemini writes the story live, word by word, and paints a picture for it. ElevenLabs reads it aloud with a narrator voice or a clone of yours. A custom MCP server lets Claude and ChatGPT write stories straight into your library.
+
+**[Try the live app](https://kinderbuch-ki.vercel.app)** (no sign-up needed) · **[Features & tech tour](https://kinderbuch-ki.vercel.app/features)**
+
+![The Kinderbuch features page, with live demos of streaming, illustrations, narration and the MCP integration](docs/screenshots/features.jpg)
+
+## At a glance
+
+- **Full stack, deployed and running:** Next.js 16 / React 19 on Vercel, an Express API on Google Cloud Run, MongoDB Atlas.
+- **Three AI services in one product:** Gemini for text and images, ElevenLabs for speech and voice cloning, and an MCP server so other AI assistants can use the app.
+- **Built for production:** OAuth 2.1 with PKCE, rate limits on every paid API call, caching, and 100+ automated tests running in CI on every pull request.
+- **Polished UI:** responsive down to small phones, a day and night theme, German and English, keyboard support and reduced motion.
+
+## Features
+
+### Stories written live
+
+You describe an idea, and the story appears word by word while Gemini writes it. The backend relays Gemini's stream to the browser as NDJSON, so the first sentence shows up almost immediately instead of after a long wait.
+
+<img src="docs/screenshots/streaming.jpg" alt="A story being written live on the Create page" width="640">
+
+### A picture for every story
+
+Every story can get an AI illustration, and saved stories can get a new one later. Logged-in users keep their stories in a personal library.
+
+<p>
+  <img src="docs/screenshots/story.jpg" alt="A saved story with its illustration" width="420">
+  <img src="docs/screenshots/library.jpg" alt="The My stories library" width="420">
 </p>
 
-<p align="center" style="margin-top: 20px; margin-bottom: 20px;">
-  👉 <strong>Try the app here:</strong><br>
-  https://kinderbuch-ki.vercel.app/
-</p>
+### Read aloud, even in your own voice
 
+Stories are narrated by ElevenLabs with a female or male voice. Parents can record a minute of their own voice, and the app clones it so every story is read in that voice. Guests can try cloning once, and their voice is deleted at ElevenLabs right after.
 
+![The My reading voice page, where you record a sample to clone your voice](docs/screenshots/voice.jpg)
 
-## Einführung
+### Straight from Claude and ChatGPT
 
-**Kinderbuch-KI** ist eine innovative Plattform, die es Kindern und Eltern ermöglicht, personalisierte, interaktive Geschichten zu erstellen. Mithilfe von KI-Technologie werden Geschichten generiert, die durch kindgerechte Illustrationen, Videofunktionen und Vorlesemöglichkeiten ein einzigartiges Erlebnis schaffen. Unser Ziel ist es, die Kreativität von Kindern zu fördern und Familien über räumliche Distanzen hinweg zu verbinden.
+The backend is also an [MCP](https://modelcontextprotocol.io) server. After a one-click "Connect to Claude" or "Connect to ChatGPT", you can ask your assistant for a bedtime story, and it writes, illustrates and saves it to your Kinderbuch library.
 
----
+![The dashboard with the Connect to Claude and Connect to ChatGPT buttons](docs/screenshots/dashboard.jpg)
 
-## Projektziele
-- **Individuelle Geschichten**: Erstellung und Anpassung von Geschichten mithilfe von Prompts und KI.
-- **Interaktive Funktionen**: Unterstützung von Videofunktionen, um Eltern und Kinder miteinander zu verbinden.
-- **Kindgerechte Gestaltung**: Fokus auf Illustrationen und Inhalte, die für Kinder geeignet sind.
-- **Speicherung und Teilen**: Möglichkeit, Geschichten als PDF zu speichern und mit anderen zu teilen.
+### Day and night, desktop and phone
 
----
+The whole app has a night theme and works on phones, including small screens and notched displays. Everything is available in German and English.
 
-## Hauptfunktionen
+<img src="docs/screenshots/mobile.jpg" alt="The landing page in night mode and a story page on a phone" width="560">
 
-### Must-Have-Funktionen
-- **Auswahl von Prompts**: Nutzer können durch einfache Eingaben den Verlauf der Geschichte beeinflussen.
-- **KI-Generierung**: Geschichten werden in Echtzeit basierend auf den Prompts generiert.
-- **Videofunktion**: Eltern und Kinder können per Video interagieren, während sie die Geschichte gemeinsam erleben.
+## Tech stack
 
-### Should-Have-Funktionen
-- **Mehrsprachigkeit**: Unterstützung für mehrere Sprachen.
-- **Vorlesefunktion**: Geschichten können mit verschiedenen Stimmen vorgelesen werden.
+| Area | Technology |
+| --- | --- |
+| Frontend | Next.js 16 (App Router), React 19, Tailwind CSS v4 |
+| Backend | Node.js, Express, Mongoose, Zod, Helmet, Winston |
+| Database | MongoDB Atlas |
+| AI | Google Gemini (text and images), ElevenLabs (text to speech, voice cloning) |
+| AI integration | Model Context Protocol server (`@modelcontextprotocol/sdk`), OAuth 2.1 with PKCE |
+| Auth | JWT, bcrypt |
+| Hosting | Vercel (frontend), Google Cloud Run via Cloud Build (backend) |
+| Quality | Jest (100+ tests), mongodb-memory-server, ESLint, GitHub Actions CI |
 
-### Could-Have-Funktionen
-- **Animierte AR-Elemente**: Erweiterung der Geschichten durch interaktive, animierte Elemente.
-- **Belohnungssystem**: Motivation durch spielerische Elemente.
+## Architecture
 
----
+```mermaid
+flowchart LR
+    Browser["Browser<br/>Next.js on Vercel"] -->|REST + NDJSON stream| API
+    Assistant["Claude / ChatGPT"] -->|MCP over HTTP<br/>OAuth 2.1| API
+    API["Express API<br/>Google Cloud Run"] --> Gemini["Gemini<br/>stories & pictures"]
+    API --> Eleven["ElevenLabs<br/>narration & voice clones"]
+    API --> Mongo[("MongoDB Atlas<br/>users, stories,<br/>images, audio cache")]
+```
 
-## Mit Claude oder ChatGPT verbinden
+The frontend is a Next.js app that talks to one Express API. The API owns every secret and every call to Gemini and ElevenLabs, so no API key ever reaches the browser. The same API serves the MCP endpoint at `/mcp`, so Claude, ChatGPT and the website share one set of accounts, stories and rules.
 
-Das Backend ist auch ein [MCP-Server](https://modelcontextprotocol.io) (Model Context Protocol). Claude, ChatGPT und andere KI-Assistenten können damit Geschichten im Konto des Nutzers schreiben, illustrieren und lesen. Auf dem Dashboard führen die Buttons „Mit Claude verbinden“ und „Mit ChatGPT verbinden“ durch die Einrichtung.
+```
+Backend/
+  app.js          Express app (exported for tests, listens only when run directly)
+  routes/api/     stories, contents (generate, stream, image, narrate), voice, users
+  services/       gemini, narration, voiceClone, storage, tokens
+  mcp/            server.js (tools), oauth.js (login and tokens), index.js (routes)
+  __tests__/      Jest tests against an in-memory MongoDB
+Frontend/
+  app/            pages: landing, generate, story/[id], mystories, voice, features
+  app/components/ shared UI (narrator, story cards, theme and language controls)
+  __tests__/      Jest tests for streaming, auth, narration and voice helpers
+```
 
-- **Adresse:** `https://<backend>/mcp` (Streamable HTTP, zustandslos)
-- **Anmeldung:** OAuth 2.1 mit PKCE und dynamischer Client-Registrierung. Der Assistent öffnet eine Login-Seite des Backends, auf der sich der Nutzer mit seinem Kinderbuch-Konto anmeldet. Access Tokens gelten eine Stunde, Refresh Tokens rotieren.
-- **Tools:** `write_story`, `illustrate_story`, `list_my_stories`, `read_story`, `get_story_ideas`
-- **Prompt:** `bedtime_story`
+## Engineering decisions
 
-Der Code liegt in `Backend/mcp/`: `server.js` (Tools), `oauth.js` (Login und Tokens) und `index.js` (Routen). Zum lokalen Testen eignet sich der [MCP Inspector](https://github.com/modelcontextprotocol/inspector) mit `http://localhost:8082/mcp`.
+- **Streaming instead of waiting.** A story took several seconds to generate, with nothing on screen. The API now reads Gemini's server-sent events and forwards each piece as newline-delimited JSON (`text`, `done`, `error`), which the browser renders as it arrives. An `error` event mid-stream and a dropped connection are both handled, so the user never sees half a story without an explanation.
+- **Keeping AI costs under control.** Every endpoint that costs money (story, image, narration, voice cloning, login) has a rate limit per IP or per account. Narrations are cached in MongoDB, so a story is only ever sent to ElevenLabs once per voice. Guests can only request a few new narrations per hour.
+- **An MCP server with real OAuth.** Claude and ChatGPT connect through OAuth 2.1 with PKCE and dynamic client registration. The user logs in on a Kinderbuch page, and the assistant receives short-lived access tokens with rotating refresh tokens. MCP tokens are signed with their own key, so they can never be used as a website login and the other way round.
+- **Privacy for voice clones.** Cloning a voice is personal data. Guests can try it once: the clone is created, reads one story, and is deleted at ElevenLabs right away. Logged-in users can delete their voice at any time, and the app tells them clearly what happens to it.
+- **Simple storage that fits the hosting.** Cloud Run's disk is temporary, so pictures are stored in MongoDB and served by the API. Google Cloud Storage is supported with one environment variable when the app needs to scale.
+- **Tests that run the real thing.** The API tests start an in-memory MongoDB and call the real Express routes with Supertest, with Gemini and ElevenLabs mocked at the HTTP boundary. GitHub Actions runs the backend tests, frontend lint, tests and a production build on every pull request.
 
-## User Stories
+## Run it locally
 
-1. **Hauptcharakter wählen**
-   - *"Als Kind möchte ich aus verschiedenen Tieren wählen können, um meinen Hauptcharakter zu bestimmen."*
-   - **Akzeptanzkriterien**:
-     - Es gibt mindestens vier Tiere zur Auswahl.
-     - Tiere werden durch Animationen hervorgehoben.
+You need Node.js 22, a MongoDB database (Atlas free tier works) and a Gemini API key. An ElevenLabs key is optional and only needed for narration and voice cloning.
 
-2. **Geschichte speichern**
-   - *"Als Nutzer möchte ich die fertige Geschichte speichern können, um sie später erneut anzusehen."*
-   - **Akzeptanzkriterien**:
-     - Geschichte kann als PDF exportiert werden.
-     - Speicherung erfolgt im Benutzerkonto.
+```bash
+# Backend, on http://localhost:8082
+cd Backend
+cp .env.example .env      # fill in MONGO_URI, ACCESS_TOKEN_SECRET and GEMINI_API_KEY
+npm install
+npm run dev
 
-3. 2. **Videofunktion nach dem Abschlussprojekt**
-   - *"Als Elternteil möchte ich per Videofunktion an der Geschichte teilnehmen können, um mit meinem Kind zu interagieren."*
-   - **Akzeptanzkriterien**:
-     - Videofunktion ist während des gesamten Prozesses verfügbar.
-     - Größe des Videofensters kann angepasst werden.
+# Frontend, on http://localhost:3000 (in a second terminal)
+cd Frontend
+npm install               # .env.development already points at localhost:8082
+npm run dev
+```
 
----
+Run the tests with `npm test` in either folder. To try the MCP server, point the [MCP Inspector](https://github.com/modelcontextprotocol/inspector) at `http://localhost:8082/mcp`.
 
-## Entwicklungsmethodik
-Das Projekt wird mit **Scrum** umgesetzt, um die agile Entwicklung und kontinuierliche Verbesserung sicherzustellen.
+## About the project
 
-### Scrum-Prozesse
-- **Sprint-Dauer**: 3,5 Wochen
-- **Scrum-Rollen**:
-  - **Product Owner**: Priorisiert Aufgaben und setzt Ziele.
-  - **Scrum Master**: Stellt die Einhaltung des Scrum-Prozesses sicher.
-  - **Entwicklungsteam**: Implementiert Funktionen (Entwickler, Designer, Tester).
-- **Artefakte**:
-  - **Product Backlog**: Enthält alle User Stories.
-  - **Sprint Backlog**: Aufgaben für den aktuellen Sprint.
-  - **Inkrement**: Fertiges Feature nach jedem Sprint.
-- **Meetings**:
-  - Sprint Planning
-  - Daily Standup
-  - Sprint Review
-  - Sprint Retrospektive
+Kinderbuch started as a five-person team project at the Techstarter bootcamp in 2025. Since then I, [Mateus Morgado](https://github.com/mateusmorgado), have developed it on my own into the app it is today: live story streaming, illustrations for saved stories, narration and voice cloning, the MCP server for Claude and ChatGPT, the security and cost hardening, the test suite and CI, and the current design. The original team is credited on the app's landing page.
 
----
-
-## Roadmap
-
-### Sprint 1-2
-- Grundlegende Auswahl von Prompts
-
-### Sprint 3-4
-- KI-basierte Geschichtengenerierung und Speicherung
-
-### Sprint 5-6
-- Videofunktion und Vorlesefunktion
-
----
-## Nützliche Links
-
-[Google-meet](https://meet.google.com/ioa-dxwc-ukt?authuser=0)
-
-[Figma-project](https://www.figma.com/files/team/1200440433546325999/project/331602336/Kinderbuch-ki?fuid=1200440420227567480)
-
----
-
-## Termine
-
-Meetings  
-
-&nbsp;&nbsp;&nbsp;&nbsp;Mo, Di, Do 18:00  
-&nbsp;&nbsp;&nbsp;&nbsp;Mi, Fr 14:30
-
-27.02 Präsentation
-
----
-
-## Priorisierung (MoSCoW)
-- **Must**:
-  - Auswahl von Prompts
-  - KI-Generierung der Geschichte
-  - Videofunktion
-- **Should**:
-  - Mehrsprachigkeit
-  - Vorlesefunktion
-- **Could**:
-  - Animierte AR-Elemente
-  - Belohnungssystem
-- **Won't**:
-  - Integration in externe Plattformen (vorerst)
-
----
-
-## Zeit- und Ressourcenplanung
-- **Teamkapazität**: 20 Story Points pro Sprint
-- **Schätzungen**:
-  - Prompts auswählen: 5 Punkte
-  - Videofunktion: 8 Punkte
-  - Geschichten speichern: 3 Punkte
-
----
-
-## Risikomanagement
-
-### Risiken
-1. **Kindgerechte Inhalte**: Schwierigkeiten bei der KI-Generierung von altersgerechten Geschichten.
-2. **Technologische Herausforderungen**: Integration der Videofunktion könnte komplex werden.
-3. **Datenschutz**: Umgang mit sensiblen Daten von Kindern.
-
-### Lösungen
-- Tests zur Sicherstellung kindgerechter Inhalte
-- Zusätzliche Entwicklungsressourcen für die Videofunktion
-- Einhaltung der DSGVO- und COPPA-Richtlinien
-
---- 
-
-## Fazit
-**Kinderbuch-KI** bietet eine einzigartige Plattform für Kinder und Eltern, um interaktive Geschichten zu erleben. Durch den  Einsatz von KI-Technologie, kindgerechten Illustrationen und innovativen Funktionen wird das gemeinsame Geschichtenerzählen neu definiert.
-
-**Call-to-Action**: Wir freuen uns über Mitwirkende und Tester, die uns bei der Umsetzung unterstützen! Starten Sie noch heute mit Ihrem ersten Beitrag oder einer Idee!
-
-
+The original planning documents from the bootcamp (in German) are in [`Dokumentation/`](Dokumentation/).
