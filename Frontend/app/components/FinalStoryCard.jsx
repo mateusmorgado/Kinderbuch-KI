@@ -118,7 +118,7 @@ export default function FinalStoryCard({
               {t.minutes(readingMinutes)}
             </span>
           </p>
-          <h1 className="break-words text-4xl font-black leading-[1.05] sm:text-5xl">
+          <h1 className="break-words text-3xl font-black leading-[1.05] sm:text-5xl">
             {story.title}
           </h1>
           {story.prompt && story.prompt.trim() !== story.title.trim() && (

@@ -144,7 +144,7 @@ export default function MyStories() {
         <div className="self-end sm:absolute sm:top-0 sm:right-0">
           <ExperienceControls />
         </div>
-        <h1 className="text-3xl font-black sm:pt-4 sm:text-4xl">{t.title}</h1>
+        <h1 className="text-2xl font-black sm:pt-4 sm:text-4xl">{t.title}</h1>
       </div>
 
       {stories.length === 0 ? (
@@ -155,9 +155,9 @@ export default function MyStories() {
               alt=""
               width={200}
               height={200}
-              className="mx-auto mb-6 xl:w-sm"
+              className="mx-auto mb-6 w-[150px] sm:w-[200px] xl:w-sm"
             />
-            <p className="mb-8 text-3xl">{loadError ? t.loadFailed : t.empty}</p>
+            <p className="mb-8 text-2xl sm:text-3xl">{loadError ? t.loadFailed : t.empty}</p>
           </div>
           <div className="flex gap-4 font-black">
             <Button

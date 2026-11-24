@@ -73,10 +73,10 @@ export default function Dashboard() {
             width={350}
             height={200}
             priority
-            className="w-[260px] sm:w-[390px] xl:w-[500px] h-auto mx-auto mb-8 sm:mb-12 night:invert night:hue-rotate-180"
+            className="w-[200px] sm:w-[390px] xl:w-[500px] h-auto mx-auto mb-6 sm:mb-12 night:invert night:hue-rotate-180"
           />
 
-          <h1 className="text-2xl sm:text-3xl font-black max-w-[18rem] sm:max-w-md mx-auto mb-8 sm:mb-10 leading-tight">
+          <h1 className="text-xl sm:text-3xl font-black max-w-[16rem] sm:max-w-md mx-auto mb-6 sm:mb-10 leading-tight">
             {firstName
               ? firstName.charAt(0).toUpperCase() + firstName.slice(1)
               : isGerman
@@ -89,7 +89,7 @@ export default function Dashboard() {
               : "welcome to your magical library!"}
           </h1>
 
-          <div className="w-full max-w-[19rem] font-black grid grid-cols-1 gap-4 mb-10">
+          <div className="w-full max-w-[15.5rem] sm:max-w-[17rem] font-black grid grid-cols-1 gap-3 sm:gap-4 mb-8 sm:mb-10">
             <Button variant="primary" className="w-full" href="/generate">
               {isGerman ? "Erstelle eine Geschichte" : "Create a story"} 📝
             </Button>

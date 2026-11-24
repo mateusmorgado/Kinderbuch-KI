@@ -38,36 +38,36 @@ export default function Home() {
       <div className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-20">
         <ExperienceControls />
       </div>
-      <div className="fixed -right-9 -bottom-5 md:-bottom-1 md:right-15 block slide-in-bt">
+      <div className="fixed -right-4 -bottom-3 sm:-right-9 sm:-bottom-5 md:-bottom-1 md:right-15 block slide-in-bt">
         <Image
           src="/misc/girl-mag.png"
           alt=""
           width={120}
           height={400}
-          className="md:w-[160px] xl:w-[180px]"
+          className="w-[72px] sm:w-[120px] md:w-[160px] xl:w-[180px]"
         />
       </div>
 
-      <div className="fixed left-0 top-1/3 md:top-1/2 -translate-y-1/2 block slide-in-lr">
+      <div className="fixed left-0 top-[40%] sm:top-1/3 md:top-1/2 -translate-y-1/2 block slide-in-lr">
         <Image
           src="/kids/boy-peek.png"
           alt=""
           width={100}
           height={400}
-          className=" md:w-[140px] xl:w-[160px] "
+          className="w-[60px] sm:w-[100px] md:w-[140px] xl:w-[160px]"
         />
       </div>
-      <div className="fixed right-0 top-[25%] md:right-4 md:top-1/4 -translate-y-1/2 block slide-in-rl">
+      <div className="fixed right-0 top-[22%] sm:top-[25%] md:right-4 md:top-1/4 -translate-y-1/2 block slide-in-rl">
         <Image
           src="/misc/dragon.webp"
           alt=""
           width={118}
           height={103}
-          className="dragon-float md:w-[260px] xl:w-[300px]"
+          className="dragon-float w-[76px] sm:w-[118px] md:w-[260px] xl:w-[300px]"
         />
       </div>
       <div className="h-full overflow-y-auto">
-        <div className="flex flex-col min-h-full justify-between pt-8 pb-[max(2rem,env(safe-area-inset-bottom))] px-2 items-center text-center">
+        <div className="flex flex-col min-h-full justify-between pt-14 sm:pt-8 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-[max(2rem,env(safe-area-inset-bottom))] px-2 items-center text-center">
           <div className="w-full sm:px-0">
             <Image
               src="/kinderbuch.svg"
@@ -75,30 +75,30 @@ export default function Home() {
               width={420}
               height={200}
               priority
-              className="m-8 w-[300px] sm:w-[390px] xl:w-[500] h-auto mx-auto mb-16 night:invert night:hue-rotate-180"
+              className="w-[210px] sm:w-[390px] h-auto mx-auto mt-2 mb-6 sm:m-8 sm:mx-auto sm:mb-16 night:invert night:hue-rotate-180"
             />
           </div>
           <div className="mx-64"></div>
 
-          <div className="relative z-10 text-3xl font-black max-w-[14rem] sm:max-w-none mx-auto">
+          <div className="relative z-10 text-xl sm:text-3xl font-black max-w-[12rem] sm:max-w-none mx-auto leading-tight">
             {isGerman
               ? "Wo Träume zu Geschichten werden"
               : "Where dreams become stories"}
           </div>
 
-          <div className="w-60 font-black grid grid-cols-1 gap-4 justify-items-center ">
-            <Button variant="primary" className="w-60" href="/register">
+          <div className="relative z-10 my-6 sm:my-0 w-48 sm:w-52 font-black grid grid-cols-1 gap-3 sm:gap-4 justify-items-center">
+            <Button variant="primary" className="w-48 sm:w-52 whitespace-nowrap" href="/register">
               {isGerman ? "Registrieren" : "Sign up"}
             </Button>
-            <Button variant="secondary" className="w-60" href="/login">
+            <Button variant="secondary" className="w-48 sm:w-52 whitespace-nowrap" href="/login">
               {isGerman ? "Login" : "Log in"}
             </Button>
-            <Button variant="glow" className="w-60" href="/generate">
+            <Button variant="glow" className="w-48 sm:w-52 whitespace-nowrap" href="/generate">
               {isGerman ? "Experiment starten" : "Start experiment"}
             </Button>
           </div>
 
-          <footer className="mt-6 max-w-3xl pb-2 text-xs font-bold">
+          <footer className="relative z-10 mt-6 max-w-3xl px-10 sm:px-0 pb-2 text-[0.7rem] sm:text-xs font-bold">
             <FeaturesOverview />
             <hr className="mx-auto my-3 w-24 border-t-2 border-current opacity-20" />
             <p className="mb-1 uppercase tracking-widest opacity-70">

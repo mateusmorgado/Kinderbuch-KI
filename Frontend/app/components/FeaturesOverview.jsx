@@ -9,7 +9,7 @@ export default function FeaturesOverview({ className = "" }) {
   return (
     <Link
       href="/features"
-      className={`group inline-flex items-center gap-1.5 rounded-full bg-[#2c2c2c] px-4 py-1.5 text-sm font-black text-white shadow-[0_3px_0_0_rgba(0,0,0,1)] ring-2 ring-black transition hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-pink-300 night:bg-white night:text-[#221d33] ${className}`}
+      className={`group inline-flex items-center gap-1.5 rounded-full bg-[#2c2c2c] px-3 py-1 text-xs sm:px-4 sm:py-1.5 sm:text-sm font-black text-white shadow-[0_3px_0_0_rgba(0,0,0,1)] ring-2 ring-black transition hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-pink-300 night:bg-white night:text-[#221d33] ${className}`}
     >
       {language === "en" ? "Features & tech" : "Funktionen & Technik"}
       <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">

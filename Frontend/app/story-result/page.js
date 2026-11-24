@@ -168,7 +168,7 @@ export default function StoryResultPage() {
           <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-[#b85c3d] night:text-[#f4a77f]">
             {t.yourStory}
           </p>
-          <h1 className="max-w-4xl text-4xl font-black leading-[1.05] sm:text-6xl">
+          <h1 className="max-w-4xl text-3xl font-black leading-[1.05] sm:text-6xl">
             {storyTitle}
           </h1>
         </div>
