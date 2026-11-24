@@ -61,6 +61,7 @@ export default function MagicPrompt({
             aria-describedby={hintId}
             placeholder={placeholder}
             rows={7}
+            maxLength={1000}
             disabled={disabled}
             className="block min-h-48 w-full resize-none rounded-[1.7rem] bg-[#fffaf1] bg-[radial-gradient(circle_at_15%_10%,rgba(247,200,152,0.35),transparent_45%),radial-gradient(circle_at_90%_90%,rgba(156,140,250,0.18),transparent_50%)] p-5 pb-11 text-left text-lg leading-relaxed text-[#3d332d] caret-[#ed8d58] outline-none placeholder:italic placeholder:text-[#8a6b55]/80 disabled:opacity-60 night:bg-[#221d33] night:bg-[radial-gradient(circle_at_15%_10%,rgba(156,140,250,0.3),transparent_45%),radial-gradient(circle_at_90%_90%,rgba(248,206,238,0.15),transparent_50%)] night:text-[#efe6ff] night:caret-[#f8ceee] night:placeholder:text-[#c9b8e8]/70"
           />

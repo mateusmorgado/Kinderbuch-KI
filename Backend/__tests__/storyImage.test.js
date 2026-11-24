@@ -137,6 +137,14 @@ describe("story images", () => {
     expect(generated.body.saveError).toBe("not-logged-in");
   });
 
+  it("rejects overly long paragraphs", async () => {
+    await request(app)
+      .post("/api/contents/generate-image")
+      .set(auth())
+      .send({ paragraph: "a".repeat(1501) })
+      .expect(400);
+  });
+
   it("returns 404 for unknown image keys", async () => {
     await request(app).get("/api/images/not-a-key").expect(404);
     await request(app).get(`/api/images/${"a".repeat(32)}`).expect(404);

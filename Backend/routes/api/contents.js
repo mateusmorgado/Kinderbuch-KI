@@ -27,6 +27,12 @@ const checkStoryRequest = (req, res) => {
     res.status(400).json({ error: "A story prompt is required" });
     return false;
   }
+  if (prompt.trim().length > gemini.MAX_PROMPT_CHARS) {
+    res.status(400).json({
+      error: `Story prompt is too long (max ${gemini.MAX_PROMPT_CHARS} characters).`,
+    });
+    return false;
+  }
   if (!gemini.isConfigured()) {
     res.status(500).json({ error: "GEMINI_API_KEY is not configured" });
     return false;
@@ -39,7 +45,10 @@ router.post("/generate", optionalAuth, storyLimiter, async (req, res, next) => {
   try {
     if (!checkStoryRequest(req, res)) return;
 
-    const resultText = await gemini.writeStory(req.body.prompt);
+    const resultText = await gemini.writeStory(req.body.prompt, {
+      source: "web",
+      authenticated: Boolean(req.user),
+    });
     res.json({ response: resultText });
   } catch (error) {
     if (error instanceof gemini.GeminiError) {
@@ -85,15 +94,16 @@ router.post("/generate-stream", optionalAuth, storyLimiter, async (req, res, nex
   try {
     if (!checkStoryRequest(req, res)) return;
 
+    const model = gemini.storyModel();
     let response;
     try {
       response = await fetch(
-        `${gemini.GEMINI_BASE_URL}/${gemini.storyModel()}:streamGenerateContent?alt=sse`,
+        `${gemini.GEMINI_BASE_URL}/${model}:streamGenerateContent?alt=sse`,
         {
           method: "POST",
           headers: gemini.geminiHeaders(),
           signal: controller.signal,
-          body: JSON.stringify(gemini.buildStoryRequest(req.body.prompt)),
+          body: JSON.stringify(gemini.buildStoryRequest(req.body.prompt, model)),
         },
       );
     } catch (error) {
@@ -118,6 +128,7 @@ router.post("/generate-stream", optionalAuth, storyLimiter, async (req, res, nex
 
     let wroteText = false;
     let finishReason = null;
+    let usageMetadata = null;
     try {
       await readGeminiEvents(response.body, (event) => {
         const candidate = event.candidates?.[0];
@@ -127,8 +138,17 @@ router.post("/generate-stream", optionalAuth, storyLimiter, async (req, res, nex
           send({ type: "text", text });
         }
         if (candidate?.finishReason) finishReason = candidate.finishReason;
+        if (event.usageMetadata) usageMetadata = event.usageMetadata;
       });
     } catch (error) {
+      gemini.logUsage({
+        operation: "story_stream",
+        model,
+        usageMetadata,
+        finishReason,
+        source: "web",
+        authenticated: Boolean(req.user),
+      });
       if (res.destroyed) return;
       logger.error(`Story stream failed: ${error.message}`);
       send({
@@ -140,6 +160,15 @@ router.post("/generate-stream", optionalAuth, storyLimiter, async (req, res, nex
       });
       return res.end();
     }
+
+    gemini.logUsage({
+      operation: "story_stream",
+      model,
+      usageMetadata,
+      finishReason,
+      source: "web",
+      authenticated: Boolean(req.user),
+    });
 
     if (finishReason === "MAX_TOKENS") {
       send({ type: "error", error: gemini.MAX_TOKENS_ERROR });
@@ -170,6 +199,11 @@ router.post("/generate-image", optionalAuth, imageLimiter, async (req, res, next
     if (typeof paragraph !== "string" || !paragraph.trim()) {
       return res.status(400).json({ error: "A story paragraph is required" });
     }
+    if (paragraph.trim().length > gemini.MAX_PARAGRAPH_CHARS) {
+      return res.status(400).json({
+        error: `Story paragraph is too long (max ${gemini.MAX_PARAGRAPH_CHARS} characters).`,
+      });
+    }
 
     if (!gemini.isConfigured()) {
       return res
@@ -177,7 +211,10 @@ router.post("/generate-image", optionalAuth, imageLimiter, async (req, res, next
         .json({ error: "GEMINI_API_KEY is not configured" });
     }
 
-    const image = await gemini.drawIllustration(paragraph);
+    const image = await gemini.drawIllustration(paragraph, {
+      source: "web",
+      authenticated: Boolean(req.user),
+    });
     const saveResult = await saveImageToStory({
       user: req.user,
       storyId: req.body.storyId,

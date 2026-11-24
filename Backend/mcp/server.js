@@ -11,7 +11,7 @@ const { logger } = require("../middleware/logging");
 const { version } = require("../package.json");
 
 const HOUR = 60 * 60 * 1000;
-const MAX_IDEA_LENGTH = 2000;
+const MAX_IDEA_LENGTH = gemini.MAX_PROMPT_CHARS;
 
 const frontendUrl = () =>
   (process.env.FRONTEND_URL || "https://kinderbuch-ki.vercel.app").replace(/\/+$/, "");
@@ -40,6 +40,19 @@ const textResult = (text, structuredContent) => ({
 const errorResult = (text) => ({ content: [{ type: "text", text }], isError: true });
 
 const storyText = (story) => story.content.map((scene) => scene.text).join("\n\n");
+
+// Matches the frontend's lastParagraphOf helper so illustrate_story sends only
+// the closing paragraph instead of the whole story to the image model.
+const lastParagraphOf = (story) => {
+  const texts = (story?.content || [])
+    .map((scene) => scene.text || "")
+    .filter((text) => text.trim());
+  const paragraphs = (texts[texts.length - 1] || "")
+    .split(/\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+  return (paragraphs[paragraphs.length - 1] || "").slice(0, gemini.MAX_PARAGRAPH_CHARS);
+};
 
 const findOwnedStory = async (storyId, userId) => {
   if (!mongoose.isValidObjectId(storyId)) return null;
@@ -113,7 +126,7 @@ const createMcpServer = () => {
         return errorResult("You wrote many stories in the last hour. Please try again later.");
       }
 
-      const text = await gemini.writeStory(idea);
+      const text = await gemini.writeStory(idea, { source: "mcp", authenticated: true });
       const story = await createStory({ userId, title, prompt: idea, scenes: [{ text }] });
       logger.info(`MCP: story ${story._id} written for user ${userId}`);
 
@@ -144,8 +157,11 @@ const createMcpServer = () => {
         return errorResult("You created many pictures in the last hour. Please try again later.");
       }
 
-      const finalScene = story.content[story.content.length - 1].text;
-      const image = await gemini.drawIllustration(finalScene);
+      const finalScene = lastParagraphOf(story);
+      const image = await gemini.drawIllustration(finalScene, {
+        source: "mcp",
+        authenticated: true,
+      });
       const saved = await saveImageToStory({ user: { id: userId }, storyId, image });
 
       return {
