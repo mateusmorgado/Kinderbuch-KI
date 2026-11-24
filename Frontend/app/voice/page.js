@@ -385,10 +385,10 @@ export default function VoicePage() {
 
       <main className="mx-auto flex max-w-3xl flex-col gap-6">
         <section className={cardClass}>
-          <h1 className="text-4xl font-black leading-tight sm:text-5xl">
+          <h1 className="text-3xl font-black leading-tight sm:text-5xl">
             🎙️ {isGuest ? t.trialTitle : t.title}
           </h1>
-          <p className="mt-4 text-lg leading-relaxed opacity-80">
+          <p className="mt-4 text-base leading-relaxed opacity-80 sm:text-lg">
             {isGuest ? t.trialIntro : t.intro}
           </p>
 

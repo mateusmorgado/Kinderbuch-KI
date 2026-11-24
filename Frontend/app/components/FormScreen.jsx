@@ -24,11 +24,11 @@ export default function FormScreen({
         {header && <div className="md:absolute md:inset-x-0 md:top-6">{header}</div>}
 
         <div className="mt-8 text-center md:mt-0">
-          <h1 className="text-4xl font-black leading-tight sm:text-5xl">
+          <h1 className="text-3xl font-black leading-tight sm:text-5xl">
             {title}
           </h1>
           {subtitle && (
-            <p className="mx-auto mt-4 max-w-xs text-lg">
+            <p className="mx-auto mt-3 max-w-xs text-base sm:mt-4 sm:text-lg">
               {subtitle}
             </p>
           )}

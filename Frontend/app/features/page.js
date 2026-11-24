@@ -190,10 +190,10 @@ export default function FeaturesPage() {
       <div className="h-full overflow-y-auto overflow-x-hidden">
         <div className="mx-auto max-w-5xl px-4 pb-[max(3rem,env(safe-area-inset-bottom))] pt-28 sm:px-6">
           <section className="text-center">
-            <h1 className="mx-auto max-w-4xl text-balance text-4xl font-black leading-[1.08] sm:text-5xl">
+            <h1 className="mx-auto max-w-4xl text-balance text-3xl font-black leading-[1.08] sm:text-5xl">
               {t("titleA")} <span className="gradient-text">{t("titleB")}</span>
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed opacity-85">
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed sm:text-lg opacity-85">
               {t("intro")}
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 font-black sm:flex-row">

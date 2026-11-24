@@ -29,7 +29,7 @@ export default function Button({
   };
 
   const baseClasses =
-    "px-4 py-2 rounded-[1.7rem] text-xl shadow-[0_4px_0_0_rgba(0,0,0,1)]";
+    "px-4 py-1.5 sm:py-2 rounded-[1.7rem] text-lg sm:text-xl shadow-[0_4px_0_0_rgba(0,0,0,1)]";
   let variantClasses = "";
 
   if (variant === "primary") {
