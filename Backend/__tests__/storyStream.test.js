@@ -107,7 +107,51 @@ describe("POST /api/contents/generate-stream", () => {
     expect(res.body.error).toEqual(expect.any(String));
   });
 
-  it("requires a prompt", async () => {
+  it("requires a prompt and enforces the max length", async () => {
     await request(app).post("/api/contents/generate-stream").send({ prompt: " " }).expect(400);
+    await request(app)
+      .post("/api/contents/generate-stream")
+      .send({ prompt: "a".repeat(1001) })
+      .expect(400);
+  });
+
+  it("logs final usageMetadata from the stream", async () => {
+    const { logger } = require("../middleware/logging");
+    const infoSpy = jest.spyOn(logger, "info").mockImplementation(() => logger);
+
+    global.fetch = jest.fn(async () =>
+      geminiStream([
+        chunk("Es war einmal "),
+        {
+          candidates: [{ content: { parts: [{ text: "ein Fuchs." }] }, finishReason: "STOP" }],
+          usageMetadata: {
+            promptTokenCount: 88,
+            candidatesTokenCount: 340,
+            thoughtsTokenCount: 0,
+            totalTokenCount: 428,
+          },
+        },
+      ]),
+    );
+
+    await request(app)
+      .post("/api/contents/generate-stream")
+      .send({ prompt: "Ein Fuchs" })
+      .expect(200);
+
+    expect(infoSpy).toHaveBeenCalledWith(
+      "Gemini story_stream usage",
+      expect.objectContaining({
+        event: "gemini_usage",
+        operation: "story_stream",
+        source: "web",
+        authenticated: false,
+        promptTokens: 88,
+        outputTokens: 340,
+        thoughtTokens: 0,
+        totalTokens: 428,
+      }),
+    );
+    infoSpy.mockRestore();
   });
 });

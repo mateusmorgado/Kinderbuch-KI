@@ -316,7 +316,7 @@ describe("MCP tools", () => {
     const png = await sharp({
       create: { width: 8, height: 8, channels: 3, background: "#f28c28" },
     }).png().toBuffer();
-    mockGeminiStory("Der Drache schlief ein.");
+    mockGeminiStory("Erster Absatz weit weg.\n\nDer Drache schlief ein.");
     const written = await callTool(accessToken, "write_story", { idea: "Ein müder Drache" });
 
     global.fetch = jest.fn(async () => ({
@@ -331,6 +331,11 @@ describe("MCP tools", () => {
     expect(result.isError).toBeFalsy();
     expect(result.content[0]).toMatchObject({ type: "image", mimeType: "image/jpeg" });
     expect(result.content[1].text).toContain("saved");
+
+    const sentBody = JSON.parse(global.fetch.mock.calls[0][1].body);
+    const sentPrompt = sentBody.contents[0].parts[0].text;
+    expect(sentPrompt).toContain("Der Drache schlief ein.");
+    expect(sentPrompt).not.toContain("Erster Absatz weit weg.");
   });
 
   it("answers the MCP handshake and offers the bedtime prompt", async () => {
