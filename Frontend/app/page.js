@@ -86,14 +86,14 @@ export default function Home() {
               : "Where dreams become stories"}
           </div>
 
-          <div className="relative z-10 my-6 sm:my-0 w-56 sm:w-60 font-black grid grid-cols-1 gap-3 sm:gap-4 justify-items-center">
-            <Button variant="primary" className="w-56 sm:w-60 whitespace-nowrap" href="/register">
+          <div className="relative z-10 my-6 sm:my-0 w-48 sm:w-52 font-black grid grid-cols-1 gap-3 sm:gap-4 justify-items-center">
+            <Button variant="primary" className="w-48 sm:w-52 whitespace-nowrap" href="/register">
               {isGerman ? "Registrieren" : "Sign up"}
             </Button>
-            <Button variant="secondary" className="w-56 sm:w-60 whitespace-nowrap" href="/login">
+            <Button variant="secondary" className="w-48 sm:w-52 whitespace-nowrap" href="/login">
               {isGerman ? "Login" : "Log in"}
             </Button>
-            <Button variant="glow" className="w-56 sm:w-60 whitespace-nowrap" href="/generate">
+            <Button variant="glow" className="w-48 sm:w-52 whitespace-nowrap" href="/generate">
               {isGerman ? "Experiment starten" : "Start experiment"}
             </Button>
           </div>

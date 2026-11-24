@@ -129,7 +129,7 @@ const card =
   "rounded-3xl border-2 border-black/10 bg-[#fffaf1]/90 p-5 shadow-[0_10px_30px_rgba(61,43,30,0.12)] backdrop-blur-sm night:border-white/10 night:bg-[#221d33]/90 night:shadow-none";
 
 const darkButton =
-  "flex items-center justify-center gap-2 rounded-[1.7rem] bg-[#2c2c2c] px-4 py-2 text-xl text-white shadow-[0_4px_0_0_rgba(0,0,0,1)] ring-2 ring-black transition hover:scale-105 active:scale-95 night:bg-white night:text-[#221d33]";
+  "flex items-center justify-center gap-2 rounded-[1.7rem] bg-[#2c2c2c] px-4 py-1 text-base sm:py-1.5 sm:text-lg text-white shadow-[0_4px_0_0_rgba(0,0,0,1)] ring-2 ring-black transition hover:scale-105 active:scale-95 night:bg-white night:text-[#221d33]";
 
 function SectionTitle({ id, children }) {
   return (
@@ -197,10 +197,10 @@ export default function FeaturesPage() {
               {t("intro")}
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 font-black sm:flex-row">
-              <Button variant="glow" href="/generate" className="w-64">
+              <Button variant="glow" href="/generate" className="w-56">
                 {t("tryIt")}
               </Button>
-              <a href={REPO_URL} target="_blank" rel="noreferrer" className={`${darkButton} w-64`}>
+              <a href={REPO_URL} target="_blank" rel="noreferrer" className={`${darkButton} w-56`}>
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="currentColor">
                   <path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z" />
                 </svg>
@@ -276,7 +276,7 @@ export default function FeaturesPage() {
           </section>
 
           <div className="mt-16 flex justify-center font-black">
-            <Button variant="glow" href="/generate" className="w-64">
+            <Button variant="glow" href="/generate" className="w-56">
               {t("tryIt")}
             </Button>
           </div>

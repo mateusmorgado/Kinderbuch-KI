@@ -89,7 +89,7 @@ export default function Dashboard() {
               : "welcome to your magical library!"}
           </h1>
 
-          <div className="w-full max-w-[17.5rem] sm:max-w-[19rem] font-black grid grid-cols-1 gap-3 sm:gap-4 mb-8 sm:mb-10">
+          <div className="w-full max-w-[15.5rem] sm:max-w-[17rem] font-black grid grid-cols-1 gap-3 sm:gap-4 mb-8 sm:mb-10">
             <Button variant="primary" className="w-full" href="/generate">
               {isGerman ? "Erstelle eine Geschichte" : "Create a story"} 📝
             </Button>
